@@ -1,0 +1,13 @@
+services:
+
+  main:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        - "USER_ID=${USER_ID}"
+        - "GROUP_ID=${GROUP_ID}"
+    user: "${USER_ID}:${GROUP_ID}"
+
+    env_file:
+      - .env
