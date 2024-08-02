@@ -1,15 +1,11 @@
-use std::fs::File;
-use std::io::prelude::*;
+use std::{fs, io::Result};
 
-fn main() {
-    let mut buffer = String::new();
+mod lexer;
 
-    match File::open("./src/1.crap") {
-        Ok(mut file) => {
-            let _ = file.read_to_string(&mut buffer);
-        }
-        _ => {}
-    }
-    
-    println!("{}", buffer);
+fn main() -> Result<()> {
+    let buffer = fs::read_to_string("./examples/1.crap")?;
+
+    lexer::tokenize(&buffer);
+
+    Ok(())
 }
