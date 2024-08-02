@@ -1,2 +1,2 @@
-export ZDOTDIR="/workspaces"
+export ZDOTDIR="/.home"
 source $ZDOTDIR/.zshrc
