@@ -1,65 +1,56 @@
 use std::io::{Error, Result};
 
 use regex::Regex;
+use tokens::TokenKind;
 
 mod tokens;
 
-pub type RegexHandler<'a> = dyn Fn(&'a mut Lexer<'a>, &'a mut Regex) -> ();
-
-pub struct RegexPattern<'a> {
+type PatternHandler = Box<dyn Fn(u32, &mut Lexer) -> () + 'static>;
+pub struct RegexPattern {
     regex: Regex,
-    handler: *mut RegexHandler<'a>,
+    handler: PatternHandler,
 }
 
 pub struct Lexer<'a> {
-    patterns: Vec<RegexPattern<'a>>,
-    tokens: Vec<tokens::Token<'a>>,
+    patterns: Vec<RegexPattern>,
+    tokens: Vec<tokens::Token>,
     source: &'a str,
-    index: usize,
+    index: u32,
 }
 
 impl<'a> Lexer<'a> {
-    pub fn advance(&mut self, lenght: usize) {
+    pub fn advance(&mut self, lenght: u32) {
         self.index += lenght
     }
 }
 
-fn defaultHandler<'a>(
-    kind: tokens::TokenKind,
-    value: &'a str
-) -> impl Fn(&'a mut Lexer<'a>, &'a mut Regex) -> ()
-{
-    let length = value.len();
-
-    let handler = move |
-        lexer: &'a mut Lexer<'a>,
-        regex: &'a mut Regex,
-    | {
-        lexer.advance(length)
-    };
-
-    return handler
-}
-
-pub fn create<'a>(buffer: &'a str) -> Result<Lexer<'a>> {
-    use tokens::TokenKind::*;
-
-    let b: *mut RegexHandler<'a> = defaultHandler(OpenBracket, "[");
-
-    Ok(Lexer {
-        patterns: vec![RegexPattern {
-            // using unwrap here, because this regex are hard coded
-            regex: Regex::new(r"\[").unwrap(),
-            handler: b,
-        }],
-        tokens: vec![],
-        source: &buffer,
-        index: 0,
+fn default_handler(length: u32, kind: tokens::TokenKind) -> PatternHandler {
+    Box::new(move |index: u32, lexer| {
+        lexer.tokens.push(tokens::create(kind, index));
+        lexer.advance(length);
     })
 }
 
-pub fn tokenize<'a>(buffer: &'a str) -> Result<Vec<tokens::Token<'a>>> {
-    let lexer = create(&buffer)?;
+pub fn create<'a>(buffer: &'a str) -> Lexer<'a> {
+    use tokens::TokenKind::*;
 
-    Ok(lexer.tokens)
+    let patterns = vec![{
+        RegexPattern {
+            regex: Regex::new(r"\[").unwrap(),
+            handler: default_handler(1, OpenBracket),
+        }
+    }];
+
+    Lexer {
+        patterns,
+        tokens: vec![],
+        source: &buffer,
+        index: 0,
+    }
+}
+
+pub fn tokenize<'a>(buffer: &'a str) -> Vec<tokens::Token> {
+    let lexer = create(&buffer);
+
+    lexer.tokens
 }

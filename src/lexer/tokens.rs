@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum TokenKind {
     Eof,
 
@@ -80,8 +80,8 @@ pub enum TokenKind {
     Provide,
 }
 
-pub struct Token<'a> {
-    value: &'a str,
+pub struct Token {
+    index: u32,
     kind: TokenKind,
 }
 
@@ -102,7 +102,7 @@ pub fn debug(token: &Token) {
 
     match token.kind {
         Identifier | Number | String => {
-            println!("{0:?}, ({1:?})", token.kind, token.value)
+            println!("{0:?}, ({1:?})", token.kind, token.index)
         }
         _ => {
             println!("{:?}, ()", token.kind)
@@ -110,6 +110,6 @@ pub fn debug(token: &Token) {
     }
 }
 
-pub fn create<'a>(kind: TokenKind, value: &'a str) -> Token<'a> {
-    Token { value, kind }
+pub fn create(kind: TokenKind, index: u32) -> Token {
+    Token { index, kind }
 }
