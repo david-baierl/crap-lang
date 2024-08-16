@@ -20,7 +20,8 @@
 		"vscode": {
 			"extensions": [
 				"rust-lang.rust-analyzer",
-				"dustypomerleau.rust-syntax"
+				"dustypomerleau.rust-syntax",
+				"yzhang.markdown-all-in-one"
 			]
 		}
 	}

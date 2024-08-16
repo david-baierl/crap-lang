@@ -15,8 +15,9 @@ services:
       # home fallback
       - $HOME:/.home:cached
 
-      # ssh
+      # ssh & gnupg
       - $HOME/.ssh:/home/rust/.ssh
+      - $HOME/.gnupg:/home/rust/.gnupg
 
       # project mounting
       - ..:/home/rust/crap-lang
