@@ -1,83 +1,49 @@
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub enum TokenKind {
-    Eof,
+    
+    // ----------------------------
+    // identifier
+    // ----------------------------
+
+    Identifier,
+
+    // ----------------------------
+    // operators
+    // ----------------------------
+
+    Plus,
+    Minus,
+    Star,
+    Slash,
+    Percent,
+
+    // ----------------------------
+    // constants
+    // ----------------------------
+
+    // ----------------------------
+    // keywords
+    // ----------------------------
+
+    // ----------------------------
+    // literals
+    // ----------------------------
 
     Number,
     String,
-    Identifier,
+
+    // ----------------------------
+    // punctuators
+    // ----------------------------
 
     OpenParen,
     CloseParen,
-    OpenBracket,
-    CloseBracket,
-    OpenCurly,
-    CloseCurly,
-
-    Assignment,
-    Equals,
-    Not,
-    NotEquals,
-
-    Less,
-    LessEquals,
-    Greater,
-    GreaterEquals,
-
-    Or,
-    And,
-
-    Dot,
-    DotDot,
-    DotDotDot,
-
-    SemiColon,
-    Colon,
-    Question,
-    Comma,
-    Plus,
-    PlusPlus,
-    PlusEquals,
-    Minus,
-    MinusMinus,
-    MinusEquals,
-    Star,
-    StarStar,
-    StarEquals,
-    Slash,
-    SlashEquals,
-    Percent,
-    PercentEquals,
 
     // ----------------------------
-    // Reserved
+    // special characters
     // ----------------------------
-    Let,
-    Const,
-    Mutable,
-    Struct,
-    New,
-    Delete,
-
-    Import,
-    From,
-    Use,
-
-    If,
-    Else,
-
-    For,
-    While,
-    In,
-    Of,
-
-    Func,
-    Throw,
-    Yeld,
-    Return,
-    Exports,
-    Typeof,
-    Dispose,
-    Provide,
+    
+    Eof,
 }
 
 pub struct Token {
@@ -85,31 +51,22 @@ pub struct Token {
     kind: TokenKind,
 }
 
-// impl<'a> Token<'a> {
-//     pub fn is_one_of_many(&self, kinds: &[TokenKind]) -> bool {
-//         for kind in kinds {
-//             if &self.kind == kind {
-//                 return true;
-//             }
-//         }
-
-//         return false;
-//     }
-// }
+impl Token {
+    pub fn from(kind: TokenKind, index: u32) -> Token {
+        Token { index, kind }
+    }
+}
 
 pub fn debug(token: &Token) {
     use TokenKind::*;
 
     match token.kind {
         Identifier | Number | String => {
+            // @TODO print value
             println!("{0:?}, ({1:?})", token.kind, token.index)
         }
         _ => {
-            println!("{:?}, ()", token.kind)
+            println!("{0:?}, ({1:?})", token.kind, token.index)
         }
     }
-}
-
-pub fn create(kind: TokenKind, index: u32) -> Token {
-    Token { index, kind }
 }
