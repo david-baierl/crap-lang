@@ -3,16 +3,19 @@ USER root
 
 ENV RUNNING_IN_DOCKER=true
 
-RUN apt-get update && apt-get upgrade
+RUN apt-get update && apt-get upgrade -y
 RUN apt-get install -y \
     git vim curl zsh
 
-# install gpg and yubikey
+# gpg and yubikey
 RUN apt-get install -y \
   gpg wget gnupg2 gnupg-agent dirmngr \
   cryptsetup scdaemon pcscd \
   yubikey-personalization yubikey-manager
-  
+
+# rust toolchain
+RUN rustup component add rustfmt
+
 # user
 ARG USER_ID=1000
 ARG GROUP_ID=1000

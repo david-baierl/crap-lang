@@ -6,10 +6,10 @@ services:
       context: .
       dockerfile: ./Dockerfile
       args:
-        - "USER_ID=${USER_ID}"
-        - "GROUP_ID=${GROUP_ID}"
+        - "USER_ID=${UID:-1000}"
+        - "GROUP_ID=${GID:-1000}"
 
-    user: "${USER_ID}:${GROUP_ID}"
+    user: "${UID:-1000}:${GID:-1000}"
 
     volumes:
       # home fallback
@@ -29,9 +29,6 @@ services:
 
     environment:
       - TZ="Europe/Berlin"
-    
-    env_file:
-      - .env
 
     # Uncomment the next four lines if you will use a ptrace-based debugger like C++, Go, and Rust.
     # cap_add:
