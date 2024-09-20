@@ -1,53 +1,27 @@
-#[derive(Debug, Copy, Clone)]
-pub enum TokenKind {
-
+#[derive(Debug)]
+pub enum Token {
     // --- literals & constants --- //
-
-    Number,
-    String,
+    Number(u32),
+    String(u32),
 
     // --- punctuators --- //
-
-    OpenParen,
-    CloseParen,
+    OpenParen(u32),
+    CloseParen(u32),
 
     // --- operators --- //
-
-    Plus,
-    Minus,
-    Star,
-    Slash,
-    Percent,
+    Plus(u32),
+    Minus(u32),
+    Star(u32),
+    Slash(u32),
+    Percent(u32),
 
     // --- identifier --- //
-
-    Identifier,
+    Identifier(u32),
 
     // --- keywords --- //
 
     // --- special characters --- //
 
     // Eol,
-    Eof,
-}
-
-pub struct Token {
-    pub index: u32,
-    pub kind: TokenKind,
-}
-
-impl Token {
-
-    pub fn debug(&self) {
-
-        match self.kind {
-            TokenKind::Identifier | TokenKind::Number | TokenKind::String => {
-                // @TODO print value
-                println!("{0:?}, ({1:?})", self.kind, self.index)
-            }
-            _ => {
-                println!("{0:?}, ({1:?})", self.kind, self.index)
-            }
-        }
-    }
+    Eof(u32),
 }

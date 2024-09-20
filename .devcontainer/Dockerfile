@@ -1,4 +1,4 @@
-FROM rust:1.80.0
+FROM rust:1.80.1-bookworm
 USER root
 
 ENV RUNNING_IN_DOCKER=true
@@ -9,9 +9,7 @@ RUN apt-get install -y \
 
 # gpg and yubikey
 RUN apt-get install -y \
-  gpg wget gnupg2 gnupg-agent dirmngr \
-  cryptsetup scdaemon pcscd \
-  yubikey-personalization yubikey-manager
+  gnupg2
 
 # rust toolchain
 RUN rustup component add rustfmt

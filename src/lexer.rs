@@ -1,7 +1,7 @@
 use crate::utils::Singleton;
 
 pub mod tokens;
-use tokens::{Token, TokenKind};
+use tokens::Token;
 
 mod pattern;
 use pattern::Pattern;
@@ -32,54 +32,55 @@ pub fn tokenize<'a>(buffer: &'a str) -> Vec<tokens::Token> {
 
     while lexer.index < buffer.len() {
         let slice = &buffer[lexer.index..];
+        let index:u32 = lexer.index.try_into().unwrap();
 
         if let Some(find) = patterns.string.find(&slice) {
-            handlers::default(&mut lexer, find, TokenKind::String);
+            handlers::default(&mut lexer, find, Token::String(index));
             continue;
         }
 
         if let Some(find) = patterns.identifier.find(&slice) {
-            handlers::default(&mut lexer, find, TokenKind::Identifier);
+            handlers::default(&mut lexer, find, Token::Identifier(index));
             continue;
         }
 
         if let Some(find) = patterns.number.find(&slice) {
-            handlers::default(&mut lexer, find, TokenKind::Number);
+            handlers::default(&mut lexer, find, Token::Number(index));
             continue;
         }
 
         if let Some(find) = patterns.open_paren.find(&slice) {
-            handlers::default(&mut lexer, find, TokenKind::OpenParen);
+            handlers::default(&mut lexer, find, Token::OpenParen(index));
             continue;
         }
 
         if let Some(find) = patterns.close_paren.find(&slice) {
-            handlers::default(&mut lexer, find, TokenKind::CloseParen);
+            handlers::default(&mut lexer, find, Token::CloseParen(index));
             continue;
         }
 
         if let Some(find) = patterns.plus.find(&slice) {
-            handlers::default(&mut lexer, find, TokenKind::Plus);
+            handlers::default(&mut lexer, find, Token::Plus(index));
             continue;
         }
 
         if let Some(find) = patterns.minus.find(&slice) {
-            handlers::default(&mut lexer, find, TokenKind::Minus);
+            handlers::default(&mut lexer, find, Token::Minus(index));
             continue;
         }
 
         if let Some(find) = patterns.star.find(&slice) {
-            handlers::default(&mut lexer, find, TokenKind::Star);
+            handlers::default(&mut lexer, find, Token::Star(index));
             continue;
         }
 
         if let Some(find) = patterns.slash.find(&slice) {
-            handlers::default(&mut lexer, find, TokenKind::Slash);
+            handlers::default(&mut lexer, find, Token::Slash(index));
             continue;
         }
 
         if let Some(find) = patterns.percent.find(&slice) {
-            handlers::default(&mut lexer, find, TokenKind::Percent);
+            handlers::default(&mut lexer, find, Token::Percent(index));
             continue;
         }
 
@@ -98,13 +99,11 @@ pub fn tokenize<'a>(buffer: &'a str) -> Vec<tokens::Token> {
         break;
     }
 
-    lexer.tokens.push(Token {
-        kind: TokenKind::Eof,
-        index: lexer.index.try_into().unwrap(),
-    });
+    let index:u32 = lexer.index.try_into().unwrap();
+    lexer.tokens.push(Token::Eof(index));
 
     for token in lexer.tokens.iter() {
-        token.debug();
+        println!("{:?}", &token);
     }
 
     lexer.tokens

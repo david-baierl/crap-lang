@@ -1,6 +1,10 @@
 use regex::Match;
 
-use super::{tokens::{Token, TokenKind}, Lexer};
+use super::{tokens::Token, Lexer};
+
+pub fn skip(lexer: &mut Lexer, find: Match) {
+    lexer.advance(find.len());
+}
 
 pub fn end_of_line(lexer: &mut Lexer, find: Match) {
     // @TODO: implicit semicolon ?
@@ -12,14 +16,7 @@ pub fn end_of_line(lexer: &mut Lexer, find: Match) {
     skip(lexer, find);
 }
 
-pub fn default(lexer: &mut Lexer, find: Match, kind: TokenKind) {
-    let index = lexer.index.try_into().unwrap();
-    let token = Token { kind, index };
-
-    lexer.advance(find.len());
+pub fn default(lexer: &mut Lexer, find: Match, token: Token) {
     lexer.tokens.push(token);
-}
-
-pub fn skip(lexer: &mut Lexer, find: Match) {
-    lexer.advance(find.len());
+    skip(lexer, find);
 }
