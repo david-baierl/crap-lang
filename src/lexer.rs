@@ -1,5 +1,3 @@
-use crate::utils::Singleton;
-
 pub mod tokens;
 use tokens::Token;
 
@@ -18,6 +16,14 @@ impl Lexer {
         self.index += length
     }
 
+    fn push(&mut self, token: Token) {
+        self.tokens.push(token);
+    }
+
+    fn last(&mut self) -> Option<&Token> {
+        self.tokens.last()
+    }
+
     fn new() -> Lexer {
         Lexer {
             tokens: vec![],
@@ -27,70 +33,70 @@ impl Lexer {
 }
 
 pub fn tokenize<'a>(buffer: &'a str) -> Vec<tokens::Token> {
-    let patterns = Pattern::instance();
+    let patterns = Pattern::new();
     let mut lexer = Lexer::new();
 
     while lexer.index < buffer.len() {
         let slice = &buffer[lexer.index..];
         let index:u32 = lexer.index.try_into().unwrap();
 
-        if let Some(find) = patterns.string.find(&slice) {
-            handlers::default(&mut lexer, find, Token::String(index));
+        if let Some(length) = patterns.string.find(&slice) {
+            handlers::default(&mut lexer, length, Token::String(index));
             continue;
         }
 
-        if let Some(find) = patterns.identifier.find(&slice) {
-            handlers::default(&mut lexer, find, Token::Identifier(index));
+        if let Some(length) = patterns.identifier.find(&slice) {
+            handlers::default(&mut lexer, length, Token::Identifier(index));
             continue;
         }
 
-        if let Some(find) = patterns.number.find(&slice) {
-            handlers::default(&mut lexer, find, Token::Number(index));
+        if let Some(length) = patterns.number.find(&slice) {
+            handlers::default(&mut lexer, length, Token::Number(index));
             continue;
         }
 
-        if let Some(find) = patterns.open_paren.find(&slice) {
-            handlers::default(&mut lexer, find, Token::OpenParen(index));
+        if let Some(length) = patterns.open_paren.find(&slice) {
+            handlers::default(&mut lexer, length, Token::OpenParen(index));
             continue;
         }
 
-        if let Some(find) = patterns.close_paren.find(&slice) {
-            handlers::default(&mut lexer, find, Token::CloseParen(index));
+        if let Some(length) = patterns.close_paren.find(&slice) {
+            handlers::default(&mut lexer, length, Token::CloseParen(index));
             continue;
         }
 
-        if let Some(find) = patterns.plus.find(&slice) {
-            handlers::default(&mut lexer, find, Token::Plus(index));
+        if let Some(length) = patterns.plus.find(&slice) {
+            handlers::default(&mut lexer, length, Token::Plus(index));
             continue;
         }
 
-        if let Some(find) = patterns.minus.find(&slice) {
-            handlers::default(&mut lexer, find, Token::Minus(index));
+        if let Some(length) = patterns.minus.find(&slice) {
+            handlers::default(&mut lexer, length, Token::Minus(index));
             continue;
         }
 
-        if let Some(find) = patterns.star.find(&slice) {
-            handlers::default(&mut lexer, find, Token::Star(index));
+        if let Some(length) = patterns.star.find(&slice) {
+            handlers::default(&mut lexer, length, Token::Star(index));
             continue;
         }
 
-        if let Some(find) = patterns.slash.find(&slice) {
-            handlers::default(&mut lexer, find, Token::Slash(index));
+        if let Some(length) = patterns.slash.find(&slice) {
+            handlers::default(&mut lexer, length, Token::Slash(index));
             continue;
         }
 
-        if let Some(find) = patterns.percent.find(&slice) {
-            handlers::default(&mut lexer, find, Token::Percent(index));
+        if let Some(length) = patterns.percent.find(&slice) {
+            handlers::default(&mut lexer, length, Token::Percent(index));
             continue;
         }
 
-        if let Some(find) = patterns.end_of_line.find(&slice) {
-            handlers::end_of_line(&mut lexer, find);
+        if let Some(length) = patterns.end_of_line.find(&slice) {
+            handlers::end_of_line(&mut lexer, length, index);
             continue;
         }
 
-        if let Some(find) = patterns.whitespace.find(&slice) {
-            handlers::skip(&mut lexer, find);
+        if let Some(length) = patterns.whitespace.find(&slice) {
+            handlers::skip(&mut lexer, length);
             continue;
         }
 

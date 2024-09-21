@@ -1,22 +1,17 @@
-use regex::Match;
-
 use super::{tokens::Token, Lexer};
 
-pub fn skip(lexer: &mut Lexer, find: Match) {
-    lexer.advance(find.len());
+pub fn skip(lexer: &mut Lexer, length: usize) {
+    lexer.advance(length);
 }
 
-pub fn end_of_line(lexer: &mut Lexer, find: Match) {
-    // @TODO: implicit semicolon ?
-    // match lexer.tokens.last().map(|token| token.kind) {
-    //     Some(TokenKind::Eol) => skip(lexer, find),
-    //     _ => default(lexer, find, TokenKind::Eol),
-    // };
-
-    skip(lexer, find);
+pub fn end_of_line(lexer: &mut Lexer, length: usize, index: u32) {
+    match lexer.last() {
+        Some(Token::Eol(_)) => skip(lexer, length),
+        _ => default(lexer, length, Token::Eol(index)),
+    };
 }
 
-pub fn default(lexer: &mut Lexer, find: Match, token: Token) {
-    lexer.tokens.push(token);
-    skip(lexer, find);
+pub fn default(lexer: &mut Lexer, length: usize, token: Token) {
+    lexer.push(token);
+    skip(lexer, length);
 }

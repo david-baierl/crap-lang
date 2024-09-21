@@ -22,6 +22,6 @@ pub enum Token {
 
     // --- special characters --- //
 
-    // Eol,
+    Eol(u32),
     Eof(u32),
 }
