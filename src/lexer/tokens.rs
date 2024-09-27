@@ -1,27 +1,26 @@
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Token {
-    // --- literals & constants --- //
-    Number(u32),
+    /* --- literals & constants --- */
+    Number(u32, f64),
     String(u32),
 
-    // --- punctuators --- //
+    /* --- punctuators --- */
     OpenParen(u32),
     CloseParen(u32),
 
-    // --- operators --- //
+    /* --- operators --- */
     Plus(u32),
     Minus(u32),
     Star(u32),
     Slash(u32),
     Percent(u32),
 
-    // --- identifier --- //
+    /* --- identifier --- */
     Identifier(u32),
 
-    // --- keywords --- //
+    /* --- keywords --- */
 
-    // --- special characters --- //
-
+    /* --- special characters --- */
     Eol(u32),
     Eof(u32),
 }

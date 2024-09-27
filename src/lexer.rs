@@ -20,7 +20,7 @@ impl Lexer {
         self.tokens.push(token);
     }
 
-    fn last(&mut self) -> Option<&Token> {
+    fn last(&self) -> Option<&Token> {
         self.tokens.last()
     }
 
@@ -51,7 +51,9 @@ pub fn tokenize<'a>(buffer: &'a str) -> Vec<tokens::Token> {
         }
 
         if let Some(length) = patterns.number.find(&slice) {
-            handlers::default(&mut lexer, length, Token::Number(index));
+            let slice = &buffer[lexer.index..(lexer.index + length)];
+            let value: f64 = slice.parse().unwrap_or(0.0);
+            handlers::default(&mut lexer, length, Token::Number(index, value));
             continue;
         }
 
@@ -107,10 +109,6 @@ pub fn tokenize<'a>(buffer: &'a str) -> Vec<tokens::Token> {
 
     let index:u32 = lexer.index.try_into().unwrap();
     lexer.tokens.push(Token::Eof(index));
-
-    for token in lexer.tokens.iter() {
-        println!("{:?}", &token);
-    }
 
     lexer.tokens
 }

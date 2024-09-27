@@ -25,29 +25,29 @@ impl PatternType {
 }
 
 pub struct Pattern {
-    // --- literals & constants --- //
+    /* --- literals & constants --- */
     pub string: PatternType,
     pub number: PatternType,
 
-    // --- punctuators --- //
+    /* --- punctuators --- */
     pub open_paren: PatternType,
     pub close_paren: PatternType,
 
-    // --- operators --- //
+    /* --- operators --- */
     pub plus: PatternType,
     pub minus: PatternType,
     pub star: PatternType,
     pub slash: PatternType,
     pub percent: PatternType,
 
-    // --- identifier --- //
+    /* --- identifier --- */
     pub identifier: PatternType,
 
-    // --- keywords --- //
+    /* --- keywords --- */
 
-    // --- special characters --- //
-    pub whitespace: PatternType,
+    /* --- special characters --- */
     pub end_of_line: PatternType,
+    pub whitespace: PatternType,
 }
 
 impl Pattern {
@@ -57,25 +57,25 @@ impl Pattern {
             string: PatternType::Regex(Regex::new(r#"^"[^"]*""#).unwrap()),
             number: PatternType::Regex(Regex::new(r"^[0-9][0-9_]*(\.[0-9]*)?").unwrap()),
 
-            // --- punctuators --- //
+            /* --- punctuators --- */
             open_paren: PatternType::String("("),
             close_paren: PatternType::String(")"),
 
-            // --- operators --- //
+            /* --- operators --- */
             plus: PatternType::String("+"),
             minus: PatternType::String("-"),
             star: PatternType::String("*"),
             slash: PatternType::String("/"),
             percent: PatternType::String("%"),
 
-            // --- identifier --- //
+            /* --- identifier --- */
             identifier: PatternType::Regex(Regex::new(r"^[a-zA-Z_][a-zA-Z0-9_]*").unwrap()),
 
-            // --- keywords --- //
+            /* --- keywords --- */
 
-            // --- special characters --- //
-            whitespace: PatternType::Regex(Regex::new(r"^[\s\t]+").unwrap()),
+            /* --- special characters --- */
             end_of_line: PatternType::Regex(Regex::new(r"^[\n\r]+").unwrap()),
+            whitespace: PatternType::Regex(Regex::new(r"^[\s\t]+").unwrap()),
         }
     }
 }
