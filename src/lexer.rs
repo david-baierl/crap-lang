@@ -107,8 +107,5 @@ pub fn tokenize<'a>(buffer: &'a str) -> Vec<tokens::Token> {
         break;
     }
 
-    let index:u32 = lexer.index.try_into().unwrap();
-    lexer.tokens.push(Token::Eof(index));
-
     lexer.tokens
 }

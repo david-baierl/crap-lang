@@ -1,6 +1,7 @@
 #[derive(Debug, Clone)]
 pub enum Token {
     /* --- literals & constants --- */
+    // @TODO: remove value from token
     Number(u32, f64),
     String(u32),
 
@@ -22,5 +23,5 @@ pub enum Token {
 
     /* --- special characters --- */
     Eol(u32),
-    Eof(u32),
+    Eof,
 }

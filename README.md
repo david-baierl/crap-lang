@@ -7,11 +7,11 @@ This is a hobby project to lern how compiler are working and additionaly lerning
 
 I will start with a Basic working code interpreter and will move towards a working compiler.
 
-|                      |  Lexical   | Syntax | Semantic |  ICG  | Optimization | Generation | Interpretation |
-| :------------------- | :--------: | :----: | :------: | :---: | :----------: | :--------: | :------------: |
-| basic arithmetic     | in process |   -    |    -     |   -   |      -       |     -      |       -        |
-| variable decleration |     -      |   -    |    -     |   -   |      -       |     -      |       -        |
-| function decleration |     -      |   -    |    -     |   -   |      -       |     -      |       -        |
+|                      |  Lexical   |   Syntax   | Semantic |  ICG  | Optimization | Generation | Interpretation |
+| :------------------- | :--------: | :--------: | :------: | :---: | :----------: | :--------: | :------------: |
+| basic arithmetic     | in process | in process |    -     |   -   |      -       |     -      |       -        |
+| variable decleration |     -      |     -      |    -     |   -   |      -       |     -      |       -        |
+| function decleration |     -      |     -      |    -     |   -   |      -       |     -      |       -        |
 
 ### Stage 2: Language Design
 
