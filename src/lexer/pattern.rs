@@ -9,14 +9,10 @@ impl PatternType {
     // @TODO: add value
     pub fn find(&self, slice: &str) -> Option<usize> {
         match self {
-            PatternType::Regex(pattern) => {
-                pattern
-                    .find(slice)
-                    .map(|find| find.len())
-            }
+            PatternType::Regex(pattern) => pattern.find(slice).map(|find| find.len()),
             PatternType::String(value) => {
                 if slice.starts_with(value) {
-                    return Some(value.len())
+                    return Some(value.len());
                 }
                 None
             }
@@ -32,6 +28,9 @@ pub struct Pattern {
     /* --- punctuators --- */
     pub open_paren: PatternType,
     pub close_paren: PatternType,
+    pub semi: PatternType,
+    pub question: PatternType,
+    pub colon: PatternType,
 
     /* --- operators --- */
     pub plus: PatternType,
@@ -60,6 +59,9 @@ impl Pattern {
             /* --- punctuators --- */
             open_paren: PatternType::String("("),
             close_paren: PatternType::String(")"),
+            semi: PatternType::String(";"),
+            question: PatternType::String("?"),
+            colon: PatternType::String(":"),
 
             /* --- operators --- */
             plus: PatternType::String("+"),

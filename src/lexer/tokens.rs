@@ -1,3 +1,5 @@
+use std::mem;
+
 #[derive(Debug, Clone)]
 pub enum Token {
     /* --- literals & constants --- */
@@ -8,6 +10,9 @@ pub enum Token {
     /* --- punctuators --- */
     OpenParen(u32),
     CloseParen(u32),
+    Semi(u32),
+    Question(u32),
+    Colon(u32),
 
     /* --- operators --- */
     Plus(u32),
@@ -24,4 +29,10 @@ pub enum Token {
     /* --- special characters --- */
     Eol(u32),
     Eof,
+}
+
+impl Token {
+    pub fn is_type(&self, other: &Token) -> bool {
+        mem::discriminant(self) == mem::discriminant(other)
+    }
 }

@@ -1,8 +1,11 @@
 use crate::tokens::Token;
 
-mod expressions; use expressions::*;
-mod precedence; use precedence::*;
-mod statements; use statements::*;
+mod expressions;
+use expressions::*;
+mod precedence;
+use precedence::*;
+mod statements;
+use statements::*;
 
 struct Parser {
     index: usize,
@@ -23,6 +26,13 @@ impl Parser {
         self.stmt.push(stmt);
     }
 
+    fn prev(&self) -> Token {
+        match self.tokens.get(self.index - 1) {
+            Some(t) => t.clone(),
+            None => Token::Eof,
+        }
+    }
+
     fn peek(&self) -> Token {
         match self.tokens.get(self.index) {
             Some(t) => t.clone(),
@@ -37,6 +47,20 @@ impl Parser {
         current
     }
 
+    fn eat(&mut self, target: Token) -> Token {
+        let mut token = self.next();
+        // eat shy (implicit semicolons)
+        while let Token::Eol(_) = token {
+            token = self.next();
+        }
+
+        if target.is_type(&token) {
+            return token;
+        }
+
+        panic!("bad token: {:?}, expected: {:?}", token, target)
+    }
+
     fn has_tokens_left(&self) -> bool {
         match self.peek() {
             Token::Eof => return false,
@@ -45,7 +69,7 @@ impl Parser {
     }
 }
 
-pub fn parse(tokens: Vec<Token>) -> Option<Vec<Statement>> {
+pub fn parse(tokens: Vec<Token>) -> Vec<Statement> {
     let mut parser = Parser::new(tokens);
 
     while parser.has_tokens_left() {
@@ -53,5 +77,5 @@ pub fn parse(tokens: Vec<Token>) -> Option<Vec<Statement>> {
         parser.push(stmt);
     }
 
-    Some(parser.stmt)
+    parser.stmt
 }

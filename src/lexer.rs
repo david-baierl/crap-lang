@@ -38,7 +38,7 @@ pub fn tokenize<'a>(buffer: &'a str) -> Vec<tokens::Token> {
 
     while lexer.index < buffer.len() {
         let slice = &buffer[lexer.index..];
-        let index:u32 = lexer.index.try_into().unwrap();
+        let index: u32 = lexer.index.try_into().unwrap();
 
         if let Some(length) = patterns.string.find(&slice) {
             handlers::default(&mut lexer, length, Token::String(index));
@@ -94,6 +94,21 @@ pub fn tokenize<'a>(buffer: &'a str) -> Vec<tokens::Token> {
 
         if let Some(length) = patterns.end_of_line.find(&slice) {
             handlers::end_of_line(&mut lexer, length, index);
+            continue;
+        }
+
+        if let Some(length) = patterns.semi.find(&slice) {
+            handlers::default(&mut lexer, length, Token::Semi(index));
+            continue;
+        }
+
+        if let Some(length) = patterns.colon.find(&slice) {
+            handlers::default(&mut lexer, length, Token::Colon(index));
+            continue;
+        }
+
+        if let Some(length) = patterns.question.find(&slice) {
+            handlers::default(&mut lexer, length, Token::Question(index));
             continue;
         }
 
