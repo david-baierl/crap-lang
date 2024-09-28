@@ -46,20 +46,16 @@ impl fmt::Debug for Statement {
                     }
 
                     match node {
-                        Node::NumberLiteral(_) => {
+                        Node::Literal(_, _) => {
                             // deph.push(0);
                         }
-                        Node::MinusUnary(_) | Node::PlusUnary(_) => {
+                        Node::Unary(_, _) => {
                             deph.push(1);
                         }
-                        Node::AdditionBinary(_)
-                        | Node::DivisionBinary(_)
-                        | Node::ModuloBinary(_)
-                        | Node::MultiplicationBinary(_)
-                        | Node::SubstractionBinary(_) => {
+                        Node::Binary(_, _) => {
                             deph.push(2);
                         }
-                        Node::ConditionTernary(_) => {
+                        Node::Ternary(_, _) => {
                             deph.push(3);
                         }
                     }
