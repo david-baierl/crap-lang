@@ -3,8 +3,7 @@ use std::mem;
 #[derive(Debug, Clone)]
 pub enum Token {
     /* --- literals & constants --- */
-    // @TODO: remove value from token
-    Number(u32, f64),
+    Number(u32),
     String(u32),
 
     /* --- punctuators --- */

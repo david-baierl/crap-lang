@@ -51,9 +51,7 @@ pub fn tokenize<'a>(buffer: &'a str) -> Vec<tokens::Token> {
         }
 
         if let Some(length) = patterns.number.find(&slice) {
-            let slice = &buffer[lexer.index..(lexer.index + length)];
-            let value: f64 = slice.parse().unwrap_or(0.0);
-            handlers::default(&mut lexer, length, Token::Number(index, value));
+            handlers::default(&mut lexer, length, Token::Number(index));
             continue;
         }
 

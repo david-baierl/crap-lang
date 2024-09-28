@@ -10,17 +10,22 @@ use super::{led_power, nud_power, Parser, Precedence};
 // this is in reverse order to speed up other processes
 #[derive(Debug)]
 pub enum Node {
-    // [T]
-    Literal(Token),
+    // literals [T]
+    NumberLiteral(u32),
 
-    // [E][T] | [T][E] -> [E][T]
-    Unary(Token),
+    // Unary [E][T] | [T][E] -> [E][T]
+    PlusUnary(u32),
+    MinusUnary(u32),
 
-    // [L][T][R] -> [L][R][T]
-    Binary(Token),
+    // binary [L][T][R] -> [L][R][T]
+    AdditionBinary(u32),
+    SubstractionBinary(u32),
+    MultiplicationBinary(u32),
+    DivisionBinary(u32),
+    ModuloBinary(u32),
 
-    // [L][T][M][T][R] -> [R][M][L][T]
-    Ternary(Token),
+    // ternary [L][T][M][T][R] -> [R][M][L][T]
+    ConditionTernary(u32),
 }
 
 pub type Expression = Vec<Node>;
@@ -43,7 +48,7 @@ pub fn parse_expr(parser: &mut Parser, prev_power: Precedence) -> Expression {
 
     // nud handler
     match token {
-        Number(_, _) => parse_literal_expr(parser, &mut expr),
+        Number(_) => parse_literal_expr(parser, &mut expr),
         Plus(_) | Minus(_) => parse_unary_expr(parser, &mut expr, nud_power),
         OpenParen(_) => parse_block_expr(parser, &mut expr),
 
@@ -81,13 +86,23 @@ pub fn parse_expr(parser: &mut Parser, prev_power: Precedence) -> Expression {
 }
 
 fn parse_literal_expr(parser: &mut Parser, expr: &mut Expression) {
-    let literal = Node::Literal(parser.next());
+    let literal = match parser.next() {
+        Token::Number(index) => Node::NumberLiteral(index),
+
+        t => panic!("literal: bad token: {:?}", t),
+    };
 
     expr.push(literal);
 }
 
 fn parse_unary_expr(parser: &mut Parser, expr: &mut Expression, power: Precedence) {
-    let operator = Node::Unary(parser.next());
+    let operator = match parser.next() {
+        Token::Plus(index) => Node::PlusUnary(index),
+        Token::Minus(index) => Node::MinusUnary(index),
+
+        t => panic!("unary: bad token: {:?}", t),
+    };
+
     let rhs = parse_expr(parser, power);
 
     expr.extend(rhs);
@@ -95,7 +110,15 @@ fn parse_unary_expr(parser: &mut Parser, expr: &mut Expression, power: Precedenc
 }
 
 fn parse_binary_expr(parser: &mut Parser, expr: &mut Expression, power: Precedence) {
-    let operator = Node::Binary(parser.next());
+    let operator = match parser.next() {
+        Token::Plus(index) => Node::AdditionBinary(index),
+        Token::Minus(index) => Node::SubstractionBinary(index),
+        Token::Star(index) => Node::MultiplicationBinary(index),
+        Token::Slash(index) => Node::DivisionBinary(index),
+        Token::Percent(index) => Node::ModuloBinary(index),
+
+        t => panic!("literal: bad token: {:?}", t),
+    };
     let rhs = parse_expr(parser, power);
 
     expr.extend(rhs);
@@ -104,7 +127,12 @@ fn parse_binary_expr(parser: &mut Parser, expr: &mut Expression, power: Preceden
 
 fn parse_ternary_expr(parser: &mut Parser, expr: &mut Expression, power: Precedence) {
     let token = parser.next();
-    let operator = Node::Ternary(token.clone());
+
+    let operator = match token {
+        Token::Question(index) => Node::ConditionTernary(index),
+
+        t => panic!("literal: bad token: {:?}", t),
+    };
 
     // [M]
     let mhs = parse_expr(parser, power.clone());

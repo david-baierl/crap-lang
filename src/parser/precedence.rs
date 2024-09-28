@@ -34,7 +34,7 @@ pub fn nud_power(token: &Token) -> Precedence {
 
     match token {
         // literals
-        Number(_, _) => Primary,
+        Number(_) => Primary,
 
         // postfix
         Plus(_) | Minus(_) => Unary,
