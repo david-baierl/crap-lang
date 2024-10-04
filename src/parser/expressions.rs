@@ -1,7 +1,7 @@
 use std::mem;
 
 use crate::{
-    ast::expressions::{Expression, ExpressionKind, ExpressionNode},
+    ast::expressions::{ExpressionKind, ExpressionNode, MutExpression},
     lexer::tokens::{Token, TokenNode},
 };
 
@@ -10,10 +10,10 @@ use super::{
     Parser,
 };
 
-pub fn parse_expr(parser: &mut Parser, prev_power: Precedence) -> Expression {
+pub fn parse_expr(parser: &mut Parser, prev_power: Precedence) -> MutExpression {
     use Token::*;
 
-    let mut expr: Expression = vec![];
+    let mut expr: MutExpression = vec![];
 
     // --- nud --- //
 
@@ -56,14 +56,14 @@ pub fn parse_expr(parser: &mut Parser, prev_power: Precedence) -> Expression {
     expr
 }
 
-fn parse_literal_expr(parser: &mut Parser, expr: &mut Expression) {
+fn parse_literal_expr(parser: &mut Parser, expr: &mut MutExpression) {
     let TokenNode { index, token } = parser.next();
     let literal = ExpressionNode::new(index, 1, token, ExpressionKind::Literal);
 
     expr.push(literal);
 }
 
-fn parse_prefix_expr(parser: &mut Parser, expr: &mut Expression, power: Precedence) {
+fn parse_prefix_expr(parser: &mut Parser, expr: &mut MutExpression, power: Precedence) {
     let TokenNode { index, token } = parser.next();
     let rhs = parse_expr(parser, power);
     expr.extend(rhs);
@@ -72,7 +72,7 @@ fn parse_prefix_expr(parser: &mut Parser, expr: &mut Expression, power: Preceden
     expr.push(operator);
 }
 
-fn parse_binary_expr(parser: &mut Parser, expr: &mut Expression, power: Precedence) {
+fn parse_binary_expr(parser: &mut Parser, expr: &mut MutExpression, power: Precedence) {
     let TokenNode { index, token } = parser.next();
     let rhs = parse_expr(parser, power);
 
@@ -82,7 +82,7 @@ fn parse_binary_expr(parser: &mut Parser, expr: &mut Expression, power: Preceden
     expr.push(operator);
 }
 
-fn parse_ternary_expr(parser: &mut Parser, expr: &mut Expression, power: Precedence) {
+fn parse_ternary_expr(parser: &mut Parser, expr: &mut MutExpression, power: Precedence) {
     let TokenNode { index, token } = parser.next();
 
     // [M]
@@ -113,7 +113,7 @@ fn parse_ternary_expr(parser: &mut Parser, expr: &mut Expression, power: Precede
     expr.push(operator);
 }
 
-fn parse_block_expr(parser: &mut Parser, expr: &mut Expression) {
+fn parse_block_expr(parser: &mut Parser, expr: &mut MutExpression) {
     let TokenNode { index, token } = parser.next();
     let rhs = parse_expr(parser, Precedence::Default);
 

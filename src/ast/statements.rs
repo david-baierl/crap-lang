@@ -1,4 +1,18 @@
+use crate::utils::{Bit, BitArray, Byte, BIT_1};
+
 use super::expressions::{debug_expr, Expression};
+
+pub enum StatementFlag {
+    IsConst,
+}
+
+impl BitArray for StatementFlag {
+    fn bit(&self) -> Bit {
+        match self {
+            StatementFlag::IsConst => BIT_1,
+        }
+    }
+}
 
 pub enum Statement {
     // --- legend --- //
@@ -16,7 +30,7 @@ pub enum Statement {
 
     Variable {
         expr: Expression, // [E value][E symbol]
-        is_const: bool,
+        flags: Byte,
     },
 }
 
@@ -28,10 +42,12 @@ pub fn debug_stmt(stmt: &Statement) {
             println!("Expression Statement");
             debug_expr(expr, &mut vec![1]);
         }
-        Variable { expr, is_const } => {
+        Variable { expr, flags } => {
             print!("Variable Statement ");
 
-            if *is_const {
+            let is_const = StatementFlag::IsConst.has(*flags);
+
+            if is_const {
                 print!("(const)")
             } else {
                 print!("(let)")

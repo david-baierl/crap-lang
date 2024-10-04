@@ -30,8 +30,6 @@ pub enum ExpressionKind {
 
 pub struct ExpressionNode {
     pub index: u32,
-    // for expression/s (statements): this counts the size of all expressions
-    // for other statements: this counts the amount of direct child nodes
     pub size: u16,
     pub token: Token,
     pub kind: ExpressionKind,
@@ -58,7 +56,9 @@ impl fmt::Debug for ExpressionNode {
     }
 }
 
-pub type Expression = Vec<ExpressionNode>;
+// drop capacity field
+pub type Expression = Box<[ExpressionNode]>;
+pub type MutExpression = Vec<ExpressionNode>;
 
 pub fn debug_expr(expr: &Expression, deph: &mut Vec<isize>) {
     use ExpressionKind::*;

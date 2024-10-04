@@ -1,4 +1,8 @@
-use crate::{ast::statements::Statement, lexer::tokens::Token};
+use crate::{
+    ast::statements::{Statement, StatementFlag},
+    lexer::tokens::Token,
+    utils::{BitArray, Byte},
+};
 
 use super::{expressions::parse_expr, precedence::Precedence, Parser};
 
@@ -19,10 +23,11 @@ pub fn parse_stmt(parser: &mut Parser) -> Statement {
 
 fn parse_variable_stmt(parser: &mut Parser) -> Statement {
     let node = parser.next();
+    let mut flags: Byte = 0;
 
-    let is_const = match node.token {
-        Token::Const => true,
-        Token::Let => false,
+    match node.token {
+        Token::Const => flags |= StatementFlag::IsConst.bit(),
+        Token::Let => (),
         _ => panic!("bad token: {:?}", node),
     };
 
@@ -36,12 +41,12 @@ fn parse_variable_stmt(parser: &mut Parser) -> Statement {
     value.extend(symbol);
 
     Statement::Variable {
-        expr: value,
-        is_const,
+        expr: value.into(),
+        flags,
     }
 }
 
 fn parse_expr_stmt(parser: &mut Parser) -> Statement {
     let expr = parse_expr(parser, Precedence::Default);
-    Statement::Expression { expr }
+    Statement::Expression { expr: expr.into() }
 }
