@@ -1,4 +1,4 @@
-use crate::tokens::Token;
+use crate::tokens::{Token, TokenNode};
 
 mod expressions;
 use expressions::*;
@@ -10,11 +10,11 @@ use statements::*;
 struct Parser {
     index: usize,
     stmt: Vec<Statement>,
-    tokens: Vec<Token>,
+    tokens: Vec<TokenNode>,
 }
 
 impl Parser {
-    fn new(tokens: Vec<Token>) -> Parser {
+    fn new(tokens: Vec<TokenNode>) -> Parser {
         Parser {
             index: 0,
             stmt: vec![],
@@ -26,35 +26,36 @@ impl Parser {
         self.stmt.push(stmt);
     }
 
-    fn prev(&self) -> Token {
+    fn prev(&self) -> TokenNode {
         match self.tokens.get(self.index - 1) {
             Some(t) => t.clone(),
-            None => Token::Eof,
+            None => TokenNode{ token: Token::Eof, index: 0 },
         }
     }
 
-    fn peek(&self) -> Token {
+    fn peek(&self) -> TokenNode {
         match self.tokens.get(self.index) {
             Some(t) => t.clone(),
-            None => Token::Eof,
+            None => TokenNode{ token: Token::Eof, index: 0 },
         }
     }
 
-    fn next(&mut self) -> Token {
+    fn next(&mut self) -> TokenNode {
         let current = self.peek();
         self.index += 1;
 
         current
     }
 
-    fn eat(&mut self, target: Token) -> Token {
+    fn eat(&mut self, target: Token) -> TokenNode {
         let mut token = self.next();
+
         // eat shy (implicit semicolons)
-        while let Token::Eol(_) = token {
+        while token.token == Token::Eol {
             token = self.next();
         }
 
-        if target.is_type(&token) {
+        if target == token.token {
             return token;
         }
 
@@ -62,14 +63,14 @@ impl Parser {
     }
 
     fn has_tokens_left(&self) -> bool {
-        match self.peek() {
+        match self.peek().token {
             Token::Eof => return false,
             _ => self.index < self.tokens.len(),
         }
     }
 }
 
-pub fn parse(tokens: Vec<Token>) -> Vec<Statement> {
+pub fn parse(tokens: Vec<TokenNode>) -> Vec<Statement> {
     let mut parser = Parser::new(tokens);
 
     while parser.has_tokens_left() {

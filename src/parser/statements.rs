@@ -1,8 +1,8 @@
 use std::fmt;
 
-use crate::tokens::Token;
+use crate::{ast::NodeKind, tokens::Token};
 
-use super::{parse_expr, Expression, Node, Parser, Precedence};
+use super::{parse_expr, Expression, Parser, Precedence};
 
 // #[derive(Debug)]
 pub enum Statement {
@@ -45,17 +45,17 @@ impl fmt::Debug for Statement {
                         deph[index] = deph[index] - 1;
                     }
 
-                    match node {
-                        Node::Literal(_, _) => {
+                    match node.kind {
+                        NodeKind::Literal => {
                             // deph.push(0);
                         }
-                        Node::Unary(_, _) => {
+                        NodeKind::Prefix | NodeKind::Sufix | NodeKind::Block => {
                             deph.push(1);
                         }
-                        Node::Binary(_, _) => {
+                        NodeKind::Binary => {
                             deph.push(2);
                         }
-                        Node::Ternary(_, _) => {
+                        NodeKind::Ternary => {
                             deph.push(3);
                         }
                     }
@@ -82,7 +82,7 @@ impl fmt::Debug for Statement {
 pub fn parse_stmt(parser: &mut Parser) -> Statement {
     let expr = parse_expr(parser, Precedence::Default);
 
-    if let Token::Semi(_) = parser.peek() {
+    if let Token::Semi = parser.peek().token {
         parser.next();
     }
 

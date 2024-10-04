@@ -1,37 +1,35 @@
-use std::mem;
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Token {
     /* --- literals & constants --- */
-    Number(u32),
-    String(u32),
+    Number,
+    String,
 
     /* --- punctuators --- */
-    OpenParen(u32),
-    CloseParen(u32),
-    Semi(u32),
-    Question(u32),
-    Colon(u32),
+    OpenParen,
+    CloseParen,
+    Semi,
+    Question,
+    Colon,
 
     /* --- operators --- */
-    Plus(u32),
-    Minus(u32),
-    Star(u32),
-    Slash(u32),
-    Percent(u32),
+    Plus,
+    Minus,
+    Star,
+    Slash,
+    Percent,
 
     /* --- identifier --- */
-    Identifier(u32),
+    Identifier,
 
     /* --- keywords --- */
 
     /* --- special characters --- */
-    Eol(u32),
+    Eol,
     Eof,
 }
 
-impl Token {
-    pub fn is_type(&self, other: &Token) -> bool {
-        mem::discriminant(self) == mem::discriminant(other)
-    }
+#[derive(Debug, Clone)]
+pub struct TokenNode {
+    pub token: Token,
+    pub index: u32,
 }

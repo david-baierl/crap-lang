@@ -1,4 +1,4 @@
-use crate::tokens::Token;
+use crate::tokens::{Token, TokenNode};
 
 use super::Parser;
 
@@ -28,46 +28,46 @@ pub enum Precedence {
     Primary,
 }
 
-pub fn nud_power(token: &Token) -> Precedence {
+pub fn nud_power(node: &TokenNode) -> Precedence {
     use Precedence::*;
     use Token::*;
 
-    match token {
+    match &node.token {
         // literals
-        Number(_) => Primary,
+        Number => Primary,
 
         // postfix
-        Plus(_) | Minus(_) => Unary,
+        Plus | Minus => Unary,
 
         // blocks
-        OpenParen(_) | Semi(_) => Default,
+        OpenParen | Semi => Default,
 
-        t => panic!("nud power: bad token: {:?}", t),
+        _ => panic!("nud power: bad token: {:?}", node),
     }
 }
 
-pub fn led_power(token: &Token, parser: &Parser) -> Precedence {
+pub fn led_power(node: &TokenNode, parser: &Parser) -> Precedence {
     use Precedence::*;
     use Token::*;
 
-    match token {
+    match node.token {
         // infix
-        Plus(_) | Minus(_) => Additive,
-        Star(_) | Slash(_) | Percent(_) => Multiplicative,
-        Question(_) | Colon(_) => Ternary,
+        Plus | Minus => Additive,
+        Star | Slash | Percent => Multiplicative,
+        Question | Colon => Ternary,
 
         // blocks
-        CloseParen(_) => Default,
+        CloseParen => Default,
 
         // end of expression
-        t => {
+        _ => {
             // call nud, will panic if it can not start again
-            if let Token::Eol(_) = parser.prev() {
-                nud_power(t);
+            if parser.prev().token == Token::Eol {
+                nud_power(node);
                 return Default;
             }
 
-            panic!("led power: bad token: {:?}", t)
+            panic!("led power: bad token: {:?}", node)
         }
     }
 }
