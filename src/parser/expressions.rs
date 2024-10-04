@@ -17,13 +17,7 @@ pub fn parse_expr(parser: &mut Parser, prev_power: Precedence) -> Expression {
 
     // --- nud --- //
 
-    let mut node = parser.peek();
-
-    while node.token == Eol || node.token == Comment {
-        parser.next();
-        node = parser.peek();
-    }
-
+    let node = parser.peek();
     let nud_power = nud_power(&node);
 
     // nud handler
@@ -39,10 +33,6 @@ pub fn parse_expr(parser: &mut Parser, prev_power: Precedence) -> Expression {
     loop {
         let node = parser.peek();
         match node.token {
-            Eol | Comment => {
-                parser.next();
-                continue;
-            }
             Eof | Semi => break,
             _ => (),
         };
@@ -55,9 +45,8 @@ pub fn parse_expr(parser: &mut Parser, prev_power: Precedence) -> Expression {
 
         // led handler
         match node.token {
-            Plus | Minus | Star | Slash | Percent => {
-                parse_binary_expr(parser, &mut expr, next_power)
-            }
+            Plus | Minus => parse_binary_expr(parser, &mut expr, next_power),
+            Star | Slash | Percent => parse_binary_expr(parser, &mut expr, next_power),
             Question => parse_ternary_expr(parser, &mut expr, next_power),
 
             _ => panic!("led handler: bad token: {:?}", node),

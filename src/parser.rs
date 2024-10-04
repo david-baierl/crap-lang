@@ -28,14 +28,26 @@ impl Parser {
         self.stmts.push(stmt);
     }
 
-    fn peek(&self) -> TokenNode {
-        match self.tokens.get(self.index) {
-            Some(t) => t.clone(),
-            None => TokenNode {
-                token: Token::Eof,
-                index: 0,
-            },
+    fn peek(&mut self) -> TokenNode {
+        for i in self.index..self.tokens.len() {
+            let node = match self.tokens.get(i) {
+                Some(node) => node,
+                None => break,
+            };
+
+            match node.token {
+                Token::Eol | Token::Comment => continue,
+                _ => {
+                    self.index = i;
+                    return node.clone()
+                },
+            }
         }
+
+        return TokenNode {
+            token: Token::Eof,
+            index: 0,
+        };
     }
 
     fn next(&mut self) -> TokenNode {
@@ -46,12 +58,7 @@ impl Parser {
     }
 
     fn eat(&mut self, target: Token) -> TokenNode {
-        let mut node = self.next();
-
-        // eat shy (implicit semicolons) and comments
-        while node.token == Token::Eol || node.token == Token::Comment {
-            node = self.next();
-        }
+        let node = self.next();
 
         if target == node.token {
             return node;
@@ -60,11 +67,9 @@ impl Parser {
         panic!("bad token: {:?}, expected: {:?}", node, target)
     }
 
-    fn has_tokens_left(&self) -> bool {
-        match self.peek().token {
-            Token::Eof => return false,
-            _ => self.index < self.tokens.len(),
-        }
+    fn has_tokens_left(&mut self) -> bool {
+        let node = self.peek();
+        node.token != Token::Eof
     }
 }
 
