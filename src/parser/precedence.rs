@@ -1,7 +1,5 @@
 use crate::lexer::tokens::{Token, TokenNode};
 
-use super::Parser;
-
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum Precedence {
     Default,
@@ -34,19 +32,17 @@ pub fn nud_power(node: &TokenNode) -> Precedence {
 
     match &node.token {
         // literals
-        Number => Primary,
+        Number | Identifier => Primary,
 
         // postfix
         Plus | Minus => Unary,
 
-        // blocks
-        OpenParen => Default,
-
-        _ => panic!("nud power: bad token: {:?}", node),
+        // end of expression
+        _ => Default,
     }
 }
 
-pub fn led_power(node: &TokenNode, parser: &Parser) -> Precedence {
+pub fn led_power(node: &TokenNode) -> Precedence {
     use Precedence::*;
     use Token::*;
 
@@ -56,18 +52,7 @@ pub fn led_power(node: &TokenNode, parser: &Parser) -> Precedence {
         Star | Slash | Percent => Multiplicative,
         Question | Colon => Ternary,
 
-        // blocks
-        CloseParen => Default,
-
         // end of expression
-        _ => {
-            // call nud, will panic if it can not start again
-            if parser.prev().token == Token::Eol {
-                nud_power(node);
-                return Default;
-            }
-
-            panic!("led power: bad token: {:?}", node)
-        }
+        _ => Default,
     }
 }

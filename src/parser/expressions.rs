@@ -28,7 +28,7 @@ pub fn parse_expr(parser: &mut Parser, prev_power: Precedence) -> Expression {
 
     // nud handler
     match node.token {
-        Number => parse_literal_expr(parser, &mut expr),
+        Number | Identifier => parse_literal_expr(parser, &mut expr),
         Plus | Minus => parse_prefix_expr(parser, &mut expr, nud_power),
         OpenParen => parse_block_expr(parser, &mut expr),
 
@@ -47,7 +47,7 @@ pub fn parse_expr(parser: &mut Parser, prev_power: Precedence) -> Expression {
             _ => (),
         };
 
-        let next_power = led_power(&node, parser);
+        let next_power = led_power(&node);
 
         if next_power <= prev_power {
             break;
@@ -79,8 +79,7 @@ fn parse_prefix_expr(parser: &mut Parser, expr: &mut Expression, power: Preceden
     let rhs = parse_expr(parser, power);
     expr.extend(rhs);
 
-    let size: u16 = expr.len().try_into().unwrap();
-    let operator = ExpressionNode::new(index, size + 1, token, ExpressionKind::Prefix);
+    let operator = ExpressionNode::new(index, expr.len() + 1, token, ExpressionKind::Prefix);
     expr.push(operator);
 }
 
@@ -90,8 +89,7 @@ fn parse_binary_expr(parser: &mut Parser, expr: &mut Expression, power: Preceden
 
     expr.extend(rhs);
 
-    let size: u16 = expr.len().try_into().unwrap();
-    let operator = ExpressionNode::new(index, size + 1, token, ExpressionKind::Binary);
+    let operator = ExpressionNode::new(index, expr.len() + 1, token, ExpressionKind::Binary);
     expr.push(operator);
 }
 
@@ -120,8 +118,7 @@ fn parse_ternary_expr(parser: &mut Parser, expr: &mut Expression, power: Precede
     // [R][M]+[L]
     expr.extend(rhs);
 
-    let size: u16 = expr.len().try_into().unwrap();
-    let operator = ExpressionNode::new(index, size + 1, token, ExpressionKind::Ternary);
+    let operator = ExpressionNode::new(index, expr.len() + 1, token, ExpressionKind::Ternary);
 
     // [R][M][L]+[T]
     expr.push(operator);
@@ -139,8 +136,7 @@ fn parse_block_expr(parser: &mut Parser, expr: &mut Expression) {
 
     expr.extend(rhs);
 
-    let size: u16 = expr.len().try_into().unwrap();
-    let operator = ExpressionNode::new(index, size + 1, token, ExpressionKind::Block);
+    let operator = ExpressionNode::new(index, expr.len() + 1, token, ExpressionKind::Block);
 
     expr.push(operator);
 }

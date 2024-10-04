@@ -39,8 +39,8 @@ pub fn tokenize<'a>(buffer: &'a str) -> Vec<tokens::TokenNode> {
         let slice = &buffer[lexer.index..];
         let index: u32 = lexer.index.try_into().unwrap();
 
-        if let Some(length) = patterns.single_line_comment.find(&slice) {
-            handlers::default(&mut lexer, length, Token::Comment, index);
+        if let Some(value) = patterns.single_line_comment.find(&slice) {
+            handlers::default(&mut lexer, value, Token::Comment, index);
 
             // the comment has eaten the new line character
             // for shy semi, we need to readd it manual
@@ -52,83 +52,88 @@ pub fn tokenize<'a>(buffer: &'a str) -> Vec<tokens::TokenNode> {
             continue;
         }
 
-        if let Some(length) = patterns.multi_line_comment.find(&slice) {
-            handlers::default(&mut lexer, length, Token::Comment, index);
+        if let Some(value) = patterns.multi_line_comment.find(&slice) {
+            handlers::default(&mut lexer, value, Token::Comment, index);
             continue;
         }
 
-        if let Some(length) = patterns.string.find(&slice) {
-            handlers::default(&mut lexer, length, Token::String, index);
+        if let Some(value) = patterns.string.find(&slice) {
+            handlers::default(&mut lexer, value, Token::String, index);
             continue;
         }
 
-        if let Some(length) = patterns.identifier.find(&slice) {
-            handlers::default(&mut lexer, length, Token::Identifier, index);
+        if let Some(value) = patterns.identifier.find(&slice) {
+            handlers::identifier(&mut lexer, value, index);
             continue;
         }
 
-        if let Some(length) = patterns.number.find(&slice) {
-            handlers::default(&mut lexer, length, Token::Number, index);
+        if let Some(value) = patterns.number.find(&slice) {
+            handlers::default(&mut lexer, value, Token::Number, index);
             continue;
         }
 
-        if let Some(length) = patterns.open_paren.find(&slice) {
-            handlers::default(&mut lexer, length, Token::OpenParen, index);
+        if let Some(value) = patterns.open_paren.find(&slice) {
+            handlers::default(&mut lexer, value, Token::OpenParen, index);
             continue;
         }
 
-        if let Some(length) = patterns.close_paren.find(&slice) {
-            handlers::default(&mut lexer, length, Token::CloseParen, index);
+        if let Some(value) = patterns.close_paren.find(&slice) {
+            handlers::default(&mut lexer, value, Token::CloseParen, index);
             continue;
         }
 
-        if let Some(length) = patterns.plus.find(&slice) {
-            handlers::default(&mut lexer, length, Token::Plus, index);
+        if let Some(value) = patterns.equal.find(&slice) {
+            handlers::default(&mut lexer, value, Token::Equal, index);
             continue;
         }
 
-        if let Some(length) = patterns.minus.find(&slice) {
-            handlers::default(&mut lexer, length, Token::Minus, index);
+        if let Some(value) = patterns.plus.find(&slice) {
+            handlers::default(&mut lexer, value, Token::Plus, index);
             continue;
         }
 
-        if let Some(length) = patterns.star.find(&slice) {
-            handlers::default(&mut lexer, length, Token::Star, index);
+        if let Some(value) = patterns.minus.find(&slice) {
+            handlers::default(&mut lexer, value, Token::Minus, index);
             continue;
         }
 
-        if let Some(length) = patterns.slash.find(&slice) {
-            handlers::default(&mut lexer, length, Token::Slash, index);
+        if let Some(value) = patterns.star.find(&slice) {
+            handlers::default(&mut lexer, value, Token::Star, index);
             continue;
         }
 
-        if let Some(length) = patterns.percent.find(&slice) {
-            handlers::default(&mut lexer, length, Token::Percent, index);
+        if let Some(value) = patterns.slash.find(&slice) {
+            handlers::default(&mut lexer, value, Token::Slash, index);
             continue;
         }
 
-        if let Some(length) = patterns.end_of_line.find(&slice) {
-            handlers::end_of_line(&mut lexer, length, index);
+        if let Some(value) = patterns.percent.find(&slice) {
+            handlers::default(&mut lexer, value, Token::Percent, index);
             continue;
         }
 
-        if let Some(length) = patterns.semi.find(&slice) {
-            handlers::default(&mut lexer, length, Token::Semi, index);
+        if let Some(value) = patterns.end_of_line.find(&slice) {
+            handlers::end_of_line(&mut lexer, value, index);
             continue;
         }
 
-        if let Some(length) = patterns.colon.find(&slice) {
-            handlers::default(&mut lexer, length, Token::Colon, index);
+        if let Some(value) = patterns.semi.find(&slice) {
+            handlers::default(&mut lexer, value, Token::Semi, index);
             continue;
         }
 
-        if let Some(length) = patterns.question.find(&slice) {
-            handlers::default(&mut lexer, length, Token::Question, index);
+        if let Some(value) = patterns.colon.find(&slice) {
+            handlers::default(&mut lexer, value, Token::Colon, index);
             continue;
         }
 
-        if let Some(length) = patterns.whitespace.find(&slice) {
-            handlers::skip(&mut lexer, length);
+        if let Some(value) = patterns.question.find(&slice) {
+            handlers::default(&mut lexer, value, Token::Question, index);
+            continue;
+        }
+
+        if let Some(value) = patterns.whitespace.find(&slice) {
+            handlers::skip(&mut lexer, value.len());
             continue;
         }
 

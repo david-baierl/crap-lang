@@ -38,10 +38,14 @@ pub struct ExpressionNode {
 }
 
 impl ExpressionNode {
-    pub fn new(index: u32, size: u16, token: Token, kind: ExpressionKind) -> ExpressionNode {
+    pub fn new(index: u32, size: usize, token: Token, kind: ExpressionKind) -> ExpressionNode {
+        if size > u16::MAX.into() {
+            panic!("max expression size reached");
+        }
+
         ExpressionNode {
             index,
-            size,
+            size: size.try_into().unwrap(),
             token,
             kind,
         }
@@ -56,17 +60,16 @@ impl fmt::Debug for ExpressionNode {
 
 pub type Expression = Vec<ExpressionNode>;
 
-pub fn debug_expr(tree: &Expression) {
+pub fn debug_expr(expr: &Expression, deph: &mut Vec<isize>) {
     use ExpressionKind::*;
 
-    let mut i = tree.len();
-    let mut deph: Vec<isize> = vec![1];
+    let mut i = expr.len();
 
     while i > 0 {
         i -= 1;
 
         let index = deph.len() - 1;
-        let node = tree.get(i).unwrap();
+        let node = expr.get(i).unwrap();
 
         let mut indent = String::new();
         if deph.len() > 0 {

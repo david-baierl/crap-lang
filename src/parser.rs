@@ -28,16 +28,6 @@ impl Parser {
         self.stmts.push(stmt);
     }
 
-    fn prev(&self) -> TokenNode {
-        match self.tokens.get(self.index - 1) {
-            Some(t) => t.clone(),
-            None => TokenNode {
-                token: Token::Eof,
-                index: 0,
-            },
-        }
-    }
-
     fn peek(&self) -> TokenNode {
         match self.tokens.get(self.index) {
             Some(t) => t.clone(),

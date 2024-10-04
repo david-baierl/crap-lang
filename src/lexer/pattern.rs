@@ -7,12 +7,14 @@ pub enum PatternType {
 
 impl PatternType {
     // @TODO: add value
-    pub fn find(&self, slice: &str) -> Option<usize> {
+    pub fn find<'a>(&self, slice: &'a str) -> Option<&'a str> {
         match self {
-            PatternType::Regex(pattern) => pattern.find(slice).map(|find| find.len()),
+            PatternType::Regex(pattern) => {
+                pattern.find(slice).map(|find| find.as_str())
+            },
             PatternType::String(value) => {
                 if slice.starts_with(value) {
-                    return Some(value.len());
+                    return Some(value);
                 }
                 None
             }
@@ -31,6 +33,7 @@ pub struct Pattern {
     pub semi: PatternType,
     pub question: PatternType,
     pub colon: PatternType,
+    pub equal: PatternType,
 
     /* --- operators --- */
     pub plus: PatternType,
@@ -64,6 +67,7 @@ impl Pattern {
             semi: PatternType::String(";"),
             question: PatternType::String("?"),
             colon: PatternType::String(":"),
+            equal: PatternType::String("="),
 
             /* --- operators --- */
             plus: PatternType::String("+"),

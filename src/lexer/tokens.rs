@@ -10,6 +10,7 @@ pub enum Token {
     Semi,
     Question,
     Colon,
+    Equal,
 
     /* --- operators --- */
     Plus,
@@ -22,6 +23,10 @@ pub enum Token {
     Identifier,
 
     /* --- keywords --- */
+    // Func,
+    Let,
+    Const,
+    // Type,
 
     /* --- misc & special characters --- */
     Comment,
