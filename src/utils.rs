@@ -1,9 +1,4 @@
-use std::{
-    alloc::{self, Layout},
-    ops::{Deref, DerefMut},
-    ptr::{self, NonNull},
-    slice,
-};
+use std::{alloc, ptr};
 
 pub type Byte = u8;
 pub type Bit = u8;
@@ -25,74 +20,94 @@ pub trait BitArray {
     }
 }
 
-pub struct SmallVec<T> {
-    ptr: NonNull<T>,
-    len: u16,
-}
+// ------------------------------------------
+// buffer
+// ------------------------------------------
 
-impl<T> SmallVec<T> {
-    fn new() -> SmallVec<T> {
-        SmallVec {
-            ptr: NonNull::dangling(),
-            len: 0,
-        }
+pub struct Buffer<T>(ptr::NonNull<T>);
+
+impl<T> Buffer<T> {
+    pub unsafe fn new(size: usize) -> Buffer<T> {
+        let layout = alloc::Layout::array::<T>(size).unwrap();
+        let ptr = alloc::alloc(layout);
+
+        assert!(layout.size() <= isize::MAX as usize, "Allocation too large");
+
+        Buffer(match ptr::NonNull::new(ptr as *mut T) {
+            Some(p) => p,
+            None => alloc::handle_alloc_error(layout),
+        })
     }
 
-    fn grow(&mut self, amount: u16) {
-        let size = amount + self.len;
-        let new_layout = Layout::array::<T>(size.into()).unwrap();
+    pub unsafe fn grow(&mut self, from: usize, to: usize) {
+        let new_layout = alloc::Layout::array::<T>(to).unwrap();
 
         assert!(
             new_layout.size() <= isize::MAX as usize,
             "Allocation too large"
         );
 
-        let new_ptr = if self.len == 0 {
-            unsafe { alloc::alloc(new_layout) }
-        } else {
-            let old_layout = Layout::array::<T>(size.into()).unwrap();
-            let old_ptr = self.ptr.as_ptr() as *mut u8;
-            unsafe { alloc::realloc(old_ptr, old_layout, new_layout.size()) }
-        };
+        let old_layout = alloc::Layout::array::<T>(from).unwrap();
+        let old_ptr = self.0.as_ptr() as *mut u8;
+        let new_ptr = alloc::realloc(old_ptr, old_layout, new_layout.size());
 
-        self.len = size;
-        self.ptr = match NonNull::new(new_ptr as *mut T) {
+        self.0 = match ptr::NonNull::new(new_ptr as *mut T) {
             Some(p) => p,
             None => alloc::handle_alloc_error(new_layout),
         };
     }
 
-    pub fn push(&mut self, elem: T) {
-        let index: usize = self.len.into();
-        self.grow(1);
-
-        unsafe {
-            ptr::write(self.ptr.as_ptr().add(index), elem);
-        }
+    pub unsafe fn insert(&mut self, index: usize, elem: T) {
+        ptr::write(self.0.as_ptr().add(index), elem);
     }
 
-    pub fn at(&self, index: u16) -> Option<T> {
-        if self.len == 0 || index >= self.len {
-            return None;
-        }
+    pub unsafe fn at(&self, index: usize) -> Option<T> {
+        Some(ptr::read(self.0.as_ptr().add(index.into())))
+    }
 
-        unsafe { Some(ptr::read(self.ptr.as_ptr().add(index.into()))) }
+    pub unsafe fn drop(&mut self, size: usize) {
+        let layout = alloc::Layout::array::<T>(size).unwrap();
+        alloc::dealloc(self.0.as_ptr() as *mut u8, layout);
     }
 }
 
-impl<T> From<Vec<T>> for SmallVec<T> {
-    fn from(mut source: Vec<T>) -> Self {
-        let mut target = SmallVec::<T>::new();
-        target.grow(source.len().try_into().unwrap());
+// ------------------------------------------
+// small vec
+// ------------------------------------------
 
-        while let Some(elem) = source.pop() {
-            let index = source.len() - 1;
-            unsafe {
-                ptr::write(target.ptr.as_ptr().add(index), elem);
-            }
+pub struct SmallVec<T> {
+    buf: Buffer<T>,
+    len: u16,
+}
+
+impl<T> SmallVec<T> {
+    fn new() -> SmallVec<T> {
+        SmallVec {
+            buf: unsafe { Buffer::new(0) },
+            len: 0,
+        }
+    }
+
+    fn grow(&mut self, amount: usize) {
+        let from: usize = self.len.into();
+        let to: usize = amount + from;
+
+        self.len = to.try_into().unwrap();
+        unsafe { self.buf.grow(from, to) };
+    }
+
+    pub fn insert(&mut self, index: usize, elem: T) {
+        self.grow(1);
+
+        unsafe { self.buf.insert(index, elem) };
+    }
+
+    pub fn at(&self, index: usize) -> Option<T> {
+        if self.len == 0 || index >= self.len.into() {
+            return None;
         }
 
-        target
+        unsafe { self.buf.at(index) }
     }
 }
 
@@ -102,23 +117,6 @@ impl<T> Drop for SmallVec<T> {
             return;
         }
 
-        let layout = Layout::array::<T>(self.len.into()).unwrap();
-        unsafe {
-            alloc::dealloc(self.ptr.as_ptr() as *mut u8, layout);
-        }
-    }
-}
-
-impl<T> Deref for SmallVec<T> {
-    type Target = [T];
-
-    fn deref(&self) -> &[T] {
-        unsafe { slice::from_raw_parts(self.ptr.as_ptr(), self.len.into()) }
-    }
-}
-
-impl<T> DerefMut for SmallVec<T> {
-    fn deref_mut(&mut self) -> &mut [T] {
-        unsafe { slice::from_raw_parts_mut(self.ptr.as_ptr(), self.len.into()) }
+        unsafe { self.buf.drop(self.len.into()) };
     }
 }
