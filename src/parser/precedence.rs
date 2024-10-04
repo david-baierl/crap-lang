@@ -1,4 +1,4 @@
-use crate::tokens::{Token, TokenNode};
+use crate::lexer::tokens::{Token, TokenNode};
 
 use super::Parser;
 

@@ -1,15 +1,17 @@
-use crate::tokens::{Token, TokenNode};
+use statements::parse_stmt;
+
+use crate::{
+    ast::statements::Statement,
+    lexer::tokens::{Token, TokenNode},
+};
 
 mod expressions;
-use expressions::*;
 mod precedence;
-use precedence::*;
 mod statements;
-use statements::*;
 
 struct Parser {
     index: usize,
-    stmt: Vec<Statement>,
+    stmts: Vec<Statement>,
     tokens: Vec<TokenNode>,
 }
 
@@ -17,13 +19,13 @@ impl Parser {
     fn new(tokens: Vec<TokenNode>) -> Parser {
         Parser {
             index: 0,
-            stmt: vec![],
+            stmts: vec![],
             tokens,
         }
     }
 
     fn push(&mut self, stmt: Statement) {
-        self.stmt.push(stmt);
+        self.stmts.push(stmt);
     }
 
     fn prev(&self) -> TokenNode {
@@ -84,5 +86,5 @@ pub fn parse(tokens: Vec<TokenNode>) -> Vec<Statement> {
         parser.push(stmt);
     }
 
-    parser.stmt
+    parser.stmts
 }

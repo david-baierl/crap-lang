@@ -1,9 +1,8 @@
-pub mod tokens;
+use pattern::Pattern;
 use tokens::{Token, TokenNode};
 
+pub mod tokens;
 mod pattern;
-use pattern::Pattern;
-
 mod handlers;
 
 struct Lexer {
