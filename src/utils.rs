@@ -1,4 +1,4 @@
-use std::{alloc, ptr};
+use std::{alloc, mem, ptr};
 
 pub type Byte = u8;
 pub type Bit = u8;
@@ -28,6 +28,10 @@ pub struct Buffer<T>(ptr::NonNull<T>);
 
 impl<T> Buffer<T> {
     pub unsafe fn new(size: usize) -> Buffer<T> {
+        if size == 0 {
+            return Buffer(ptr::NonNull::<T>::dangling());
+        }
+
         let layout = alloc::Layout::array::<T>(size).unwrap();
         let ptr = alloc::alloc(layout);
 
@@ -61,18 +65,77 @@ impl<T> Buffer<T> {
         ptr::write(self.0.as_ptr().add(index), elem);
     }
 
-    pub unsafe fn at(&self, index: usize) -> Option<T> {
-        Some(ptr::read(self.0.as_ptr().add(index.into())))
+    pub unsafe fn at(&self, index: usize) -> &T {
+        &*self.0.as_ptr().add(index.into())
     }
 
-    pub unsafe fn drop(&mut self, size: usize) {
+    unsafe fn free(&self, at: usize, size: usize) {
         let layout = alloc::Layout::array::<T>(size).unwrap();
-        alloc::dealloc(self.0.as_ptr() as *mut u8, layout);
+        alloc::dealloc(self.0.as_ptr().add(at) as *mut u8, layout);
+    }
+
+    pub unsafe fn drop(&self, size: usize) {
+        if size == 0 {
+            return;
+        }
+
+        if mem::needs_drop::<T>() {
+            for i in 0..(size - 1) {
+                ptr::drop_in_place(self.0.as_ptr().add(i));
+            }
+        }
+
+        self.free(0, size);
+    }
+}
+
+pub trait BufferReader<T> {
+    fn buf(&self) -> &Buffer<T>;
+    fn len(&self) -> usize;
+
+    fn at(&self, index: usize) -> Option<&T> {
+        if index >= self.len() {
+            return None;
+        }
+
+        unsafe { Some(self.buf().at(index)) }
+    }
+
+    fn drop_buf(&mut self) {
+        let size = self.len();
+
+        if size == 0 {
+            return;
+        }
+
+        unsafe { self.buf().drop(size) };
+    }
+}
+
+pub trait BufferWriter<T>: BufferReader<T> {
+    fn mut_buf(&mut self) -> &mut Buffer<T>;
+    fn set_len(&mut self, size: usize);
+
+    fn grow(&mut self, amount: usize) {
+        let from: usize = self.len().into();
+        let to: usize = amount + from;
+
+        self.set_len(to);
+
+        unsafe { self.mut_buf().grow(from, to) };
+    }
+
+    fn insert(&mut self, index: usize, elem: T) {
+        if self.len() == 0 || index >= self.len() {
+            panic!("writing buffer out of bound")
+        }
+
+        unsafe { self.mut_buf().insert(index, elem) };
     }
 }
 
 // ------------------------------------------
-// small vec
+// example
 // ------------------------------------------
 
 pub struct SmallVec<T> {
@@ -87,36 +150,34 @@ impl<T> SmallVec<T> {
             len: 0,
         }
     }
+}
 
-    fn grow(&mut self, amount: usize) {
-        let from: usize = self.len.into();
-        let to: usize = amount + from;
-
-        self.len = to.try_into().unwrap();
-        unsafe { self.buf.grow(from, to) };
+impl<T> BufferReader<T> for SmallVec<T> {
+    fn buf(&self) -> &Buffer<T> {
+        &self.buf
     }
 
-    pub fn insert(&mut self, index: usize, elem: T) {
-        self.grow(1);
+    fn len(&self) -> usize {
+        self.len.into()
+    }
+}
 
-        unsafe { self.buf.insert(index, elem) };
+impl<T> BufferWriter<T> for SmallVec<T> {
+    fn mut_buf(&mut self) -> &mut Buffer<T> {
+        &mut self.buf
     }
 
-    pub fn at(&self, index: usize) -> Option<T> {
-        if self.len == 0 || index >= self.len.into() {
-            return None;
+    fn set_len(&mut self, size: usize) {
+        if size > u16::MAX.into() {
+            panic!("Allocation too large")
         }
 
-        unsafe { self.buf.at(index) }
+        self.len = size.try_into().unwrap();
     }
 }
 
 impl<T> Drop for SmallVec<T> {
     fn drop(&mut self) {
-        if self.len == 0 {
-            return;
-        }
-
-        unsafe { self.buf.drop(self.len.into()) };
+        self.drop_buf();
     }
 }
