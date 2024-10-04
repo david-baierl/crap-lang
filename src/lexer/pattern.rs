@@ -45,6 +45,8 @@ pub struct Pattern {
     /* --- keywords --- */
 
     /* --- special characters --- */
+    pub single_line_comment: PatternType,
+    pub multi_line_comment: PatternType,
     pub end_of_line: PatternType,
     pub whitespace: PatternType,
 }
@@ -76,7 +78,9 @@ impl Pattern {
             /* --- keywords --- */
 
             /* --- special characters --- */
-            end_of_line: PatternType::Regex(Regex::new(r"^[\n\r]+").unwrap()),
+            single_line_comment: PatternType::Regex(Regex::new(r"^//.*([\r\n]|$)").unwrap()),
+            multi_line_comment: PatternType::Regex(Regex::new(r"^/\*(.|[\r\n])*?\*/").unwrap()),
+            end_of_line: PatternType::Regex(Regex::new(r"^[\r\n]+").unwrap()),
             whitespace: PatternType::Regex(Regex::new(r"^[\s\t]+").unwrap()),
         }
     }

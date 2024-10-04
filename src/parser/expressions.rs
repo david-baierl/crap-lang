@@ -1,6 +1,9 @@
 use std::mem;
 
-use crate::{ast::Node, tokens::{Token, TokenNode}};
+use crate::{
+    ast::Node,
+    tokens::{Token, TokenNode},
+};
 
 use super::{led_power, nud_power, Parser, Precedence};
 
@@ -15,7 +18,7 @@ pub fn parse_expr(parser: &mut Parser, prev_power: Precedence) -> Expression {
 
     let mut node = parser.peek();
 
-    while node.token == Eol {
+    while node.token == Eol || node.token == Comment {
         parser.next();
         node = parser.peek();
     }
@@ -28,34 +31,35 @@ pub fn parse_expr(parser: &mut Parser, prev_power: Precedence) -> Expression {
         Plus | Minus => parse_prefix_expr(parser, &mut expr, nud_power),
         OpenParen => parse_block_expr(parser, &mut expr),
 
-        t => panic!("nud handler: bad token: {:?}", t),
+        _ => panic!("nud handler: bad token: {:?}", node),
     };
 
     // --- led --- //
     loop {
         let node = parser.peek();
-        let operator = match node.token {
-            Eol => {
+        match node.token {
+            Eol | Comment => {
                 parser.next();
                 continue;
             }
             Eof | Semi => break,
-            _ => node,
+            _ => (),
         };
 
-        let next_power = led_power(&operator, parser);
+        let next_power = led_power(&node, parser);
 
         if next_power <= prev_power {
             break;
         }
 
         // led handler
-        match operator.token {
-            Plus | Minus => parse_binary_expr(parser, &mut expr, next_power),
-            Star | Slash | Percent => parse_binary_expr(parser, &mut expr, next_power),
+        match node.token {
+            Plus | Minus | Star | Slash | Percent => {
+                parse_binary_expr(parser, &mut expr, next_power)
+            }
             Question => parse_ternary_expr(parser, &mut expr, next_power),
 
-            t => panic!("led handler: bad token: {:?}", t),
+            _ => panic!("led handler: bad token: {:?}", node),
         }
     }
 
@@ -63,14 +67,14 @@ pub fn parse_expr(parser: &mut Parser, prev_power: Precedence) -> Expression {
 }
 
 fn parse_literal_expr(parser: &mut Parser, expr: &mut Expression) {
-    let TokenNode{ index, token } = parser.next();
+    let TokenNode { index, token } = parser.next();
     let literal = Node::new_literal(index, 1, token);
 
     expr.push(literal);
 }
 
 fn parse_prefix_expr(parser: &mut Parser, expr: &mut Expression, power: Precedence) {
-    let TokenNode{ index, token } = parser.next();
+    let TokenNode { index, token } = parser.next();
     let rhs = parse_expr(parser, power);
     expr.extend(rhs);
 
@@ -80,9 +84,9 @@ fn parse_prefix_expr(parser: &mut Parser, expr: &mut Expression, power: Preceden
 }
 
 fn parse_binary_expr(parser: &mut Parser, expr: &mut Expression, power: Precedence) {
-    let TokenNode{ index, token } = parser.next();
+    let TokenNode { index, token } = parser.next();
     let rhs = parse_expr(parser, power);
-        
+
     expr.extend(rhs);
 
     let size: u16 = expr.len().try_into().unwrap();
@@ -91,7 +95,7 @@ fn parse_binary_expr(parser: &mut Parser, expr: &mut Expression, power: Preceden
 }
 
 fn parse_ternary_expr(parser: &mut Parser, expr: &mut Expression, power: Precedence) {
-    let TokenNode{ index, token } = parser.next();
+    let TokenNode { index, token } = parser.next();
 
     // [M]
     let mhs = parse_expr(parser, power.clone());
@@ -123,7 +127,7 @@ fn parse_ternary_expr(parser: &mut Parser, expr: &mut Expression, power: Precede
 }
 
 fn parse_block_expr(parser: &mut Parser, expr: &mut Expression) {
-    let TokenNode{ index, token } = parser.next();
+    let TokenNode { index, token } = parser.next();
     let rhs = parse_expr(parser, Precedence::Default);
 
     match token {

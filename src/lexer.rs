@@ -40,6 +40,24 @@ pub fn tokenize<'a>(buffer: &'a str) -> Vec<tokens::TokenNode> {
         let slice = &buffer[lexer.index..];
         let index: u32 = lexer.index.try_into().unwrap();
 
+        if let Some(length) = patterns.single_line_comment.find(&slice) {
+            handlers::default(&mut lexer, length, Token::Comment, index);
+
+            // the comment has eaten the new line character
+            // for shy semi, we need to readd it manual
+            lexer.push(TokenNode {
+                index,
+                token: Token::Eol,
+            });
+
+            continue;
+        }
+
+        if let Some(length) = patterns.multi_line_comment.find(&slice) {
+            handlers::default(&mut lexer, length, Token::Comment, index);
+            continue;
+        }
+
         if let Some(length) = patterns.string.find(&slice) {
             handlers::default(&mut lexer, length, Token::String, index);
             continue;

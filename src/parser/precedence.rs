@@ -40,7 +40,7 @@ pub fn nud_power(node: &TokenNode) -> Precedence {
         Plus | Minus => Unary,
 
         // blocks
-        OpenParen | Semi => Default,
+        OpenParen => Default,
 
         _ => panic!("nud power: bad token: {:?}", node),
     }

@@ -23,13 +23,14 @@ pub enum Token {
 
     /* --- keywords --- */
 
-    /* --- special characters --- */
-    Eol,
-    Eof,
+    /* --- misc & special characters --- */
+    Comment,
+    Eol, // end of line (shy semi)
+    Eof, // end of file
 }
 
 #[derive(Debug, Clone)]
 pub struct TokenNode {
-    pub token: Token,
     pub index: u32,
+    pub token: Token,
 }
