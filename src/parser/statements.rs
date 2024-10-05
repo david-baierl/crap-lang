@@ -1,7 +1,7 @@
 use crate::{
     ast::statements::{Statement, StatementFlag},
     lexer::tokens::Token,
-    utils::{BitArray, Byte},
+    utils::bit_array::{BitArray, Byte},
 };
 
 use super::{expressions::parse_expr, precedence::Precedence, Parser};
