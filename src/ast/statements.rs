@@ -1,6 +1,9 @@
-use crate::utils::bit_array::{Bit, BitArray, Byte, BIT_1};
+use crate::utils::{
+    bit_array::{Bit, BitArray, Byte, BIT_1},
+    buffer::{Buffer, BufferReader}, u16vec::U16Vec,
+};
 
-use super::expressions::{debug_expr, Expression};
+use super::expressions::{debug_expr, ExpressionNode};
 
 pub enum StatementFlag {
     IsConst,
@@ -23,26 +26,65 @@ pub enum Statement {
     // Block {
     //     stmts: Vec<Statement>,
     // },
-
     Expression {
-        expr: Expression, // [E]
+        expr: Buffer<ExpressionNode>, // [E]
+        len: u16,
     },
 
     Variable {
-        expr: Expression, // [E value][E symbol]
+        expr: Buffer<ExpressionNode>, // [E value][E symbol]
+        len: u16,
         flags: Byte,
     },
 }
 
-pub fn debug_stmt(stmt: &Statement) {
-    use Statement::*;
+// -------------------------------------------------
+// vector trait
+// -------------------------------------------------
 
-    match stmt {
-        Expression { expr } => {
-            println!("Expression Statement");
-            debug_expr(expr, &mut vec![1]);
+impl Drop for Statement {
+    fn drop(&mut self) {
+        let size = self.len();
+
+        unsafe {
+            match self {
+                Statement::Expression { expr, .. } => expr.drop(size),
+                Statement::Variable { expr, .. } => expr.drop(size),
+                // _ => ()
+            }
         }
-        Variable { expr, flags } => {
+    }
+}
+
+impl BufferReader<ExpressionNode> for Statement {
+    fn len(&self) -> usize {
+        match self {
+            Statement::Expression { len, .. } => len.clone().into(),
+            Statement::Variable { len, .. } => len.clone().into(),
+            // _ => 0,
+        }
+    }
+
+    fn buf(&self) -> &Buffer<ExpressionNode> {
+        match self {
+            Statement::Expression { expr, .. } => expr,
+            Statement::Variable { expr, .. } => expr,
+            // _ => panic!("buffer access on non buffer variant"),
+        }
+    }
+}
+
+// -------------------------------------------------
+// @DEBUG
+// -------------------------------------------------
+
+pub fn debug_stmt(stmt: &Statement) {
+    match stmt {
+        Statement::Expression { .. } => {
+            println!("Expression Statement");
+            debug_expr(stmt, &mut vec![1]);
+        }
+        Statement::Variable { flags, .. } => {
             print!("Variable Statement ");
 
             let is_const = StatementFlag::IsConst.has(*flags);
@@ -55,7 +97,7 @@ pub fn debug_stmt(stmt: &Statement) {
 
             print!("\n");
 
-            debug_expr(expr, &mut vec![2]);
+            debug_expr(stmt, &mut vec![2]);
         }
     }
 }

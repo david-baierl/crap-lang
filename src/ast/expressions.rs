@@ -1,6 +1,9 @@
 use core::fmt;
 
-use crate::lexer::tokens::Token;
+use crate::{
+    lexer::tokens::Token,
+    utils::{buffer::BufferReader, u16vec::U16Vec},
+};
 
 #[derive(Debug)]
 pub enum ExpressionKind {
@@ -16,7 +19,7 @@ pub enum ExpressionKind {
 
     // --- unary --- //
     Prefix, // [E][T] -> [E][T]
-    Sufix,  // [T][E] -> [E][T]
+    // Sufix,  // [T][E] -> [E][T]
     Block,  // [T][E][T] -> [E][T]
 
     // --- binary --- //
@@ -35,32 +38,23 @@ pub struct ExpressionNode {
     pub kind: ExpressionKind,
 }
 
-impl ExpressionNode {
-    pub fn new(index: u32, size: usize, token: Token, kind: ExpressionKind) -> ExpressionNode {
-        if size > u16::MAX.into() {
-            panic!("max expression size reached");
-        }
-
-        ExpressionNode {
-            index,
-            size: size.try_into().unwrap(),
-            token,
-            kind,
-        }
-    }
-}
-
 impl fmt::Debug for ExpressionNode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?} {:?} i:{}", self.kind, self.token, self.index)
     }
 }
 
-// drop capacity field
-pub type Expression = Box<[ExpressionNode]>;
-pub type MutExpression = Vec<ExpressionNode>;
+pub type Expression = U16Vec<ExpressionNode>;
 
-pub fn debug_expr(expr: &Expression, deph: &mut Vec<isize>) {
+// -----------------------------------------------------------
+// small vec
+// -----------------------------------------------------------
+
+// -----------------------------------------------------------
+// @DEBUG
+// -----------------------------------------------------------
+
+pub fn debug_expr(expr: &dyn BufferReader<ExpressionNode>, deph: &mut Vec<isize>) {
     use ExpressionKind::*;
 
     let mut i = expr.len();
@@ -69,7 +63,7 @@ pub fn debug_expr(expr: &Expression, deph: &mut Vec<isize>) {
         i -= 1;
 
         let index = deph.len() - 1;
-        let node = expr.get(i).unwrap();
+        let node = expr.at(i).unwrap();
 
         let mut indent = String::new();
         if deph.len() > 0 {

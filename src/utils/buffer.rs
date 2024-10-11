@@ -23,15 +23,14 @@ mod heap {
         }
     }
 
-    pub unsafe fn realloc<T>(ptr: ptr::NonNull<T>, from: usize, to: usize) -> ptr::NonNull<T> {
+    pub unsafe fn realloc<T>(ptr: *mut T, from: usize, to: usize) -> ptr::NonNull<T> {
         assert!(to > 0, "Allocation too small");
         let layout = alloc::Layout::array::<T>(to).unwrap();
         assert!(layout.size() <= isize::MAX as usize, "Allocation too large");
 
-        let old_ptr = ptr.as_ptr() as *mut u8;
         let old_layout = alloc::Layout::array::<T>(from).unwrap();
 
-        let new_ptr = alloc::realloc(old_ptr, old_layout, layout.size());
+        let new_ptr = alloc::realloc(ptr as *mut u8, old_layout, layout.size());
 
         match ptr::NonNull::new(new_ptr as *mut T) {
             Some(p) => p,
@@ -39,32 +38,36 @@ mod heap {
         }
     }
 
-    pub unsafe fn copy<T>(source: ptr::NonNull<T>, target: ptr::NonNull<T>, size: usize) {
-        ptr::copy_nonoverlapping(source.as_ptr(), target.as_ptr(), size);
+    pub unsafe fn copy<T>(source: *const T, target: *mut T, size: usize) {
+        ptr::copy_nonoverlapping(source, target, size);
     }
 
-    pub unsafe fn free<T>(ptr: ptr::NonNull<T>, size: usize) {
-        drop(ptr, 0, size - 1);
+    pub unsafe fn free<T>(ptr: *mut T, size: usize) {
+        if size == 0 {
+            return
+        }
+
+        drop::<T>(ptr, 0, size - 1);
         let layout = alloc::Layout::array::<T>(size).unwrap();
-        alloc::dealloc(ptr.as_ptr() as *mut u8, layout);
+        alloc::dealloc(ptr as *mut u8, layout);
     }
 
-    pub unsafe fn drop<T>(ptr: ptr::NonNull<T>, start: usize, stop: usize) {
+    pub unsafe fn drop<T>(ptr: *mut T, start: usize, stop: usize) {
         if !mem::needs_drop::<T>() {
             return;
         }
 
         for i in start..stop {
-            ptr::drop_in_place(ptr.as_ptr().add(i));
+            ptr::drop_in_place(ptr.add(i));
         }
     }
 
-    pub unsafe fn insert<T>(ptr: ptr::NonNull<T>, index: usize, elem: T) {
-        ptr::write(ptr.as_ptr().add(index), elem);
+    pub unsafe fn insert<T>(ptr: *mut T, index: usize, elem: T) {
+        ptr::write(ptr.add(index), elem);
     }
 
-    pub unsafe fn at<'a, T>(ptr: ptr::NonNull<T>, index: usize) -> &'a T {
-        &*ptr.as_ptr().add(index.into())
+    pub unsafe fn at<'a, T>(ptr: *const T, index: usize) -> &'a T {
+        &*ptr.add(index.into())
     }
 }
 
@@ -77,14 +80,26 @@ pub struct Buffer<T> {
 }
 
 impl<T> Buffer<T> {
-    pub unsafe fn new(size: usize) -> Buffer<T> {
+    pub unsafe fn new(size: usize) -> Self {
         Buffer {
-            ptr: unsafe { heap::alloc(size) },
+            ptr: unsafe { heap::alloc::<T>(size) },
         }
     }
 
-    pub unsafe fn drop(&mut self, size: usize) {
-        unsafe { heap::free(self.ptr, size) };
+    pub unsafe fn drop(&self, size: usize) {
+        unsafe { heap::free::<T>(self.ptr.as_ptr(), size) };
+    }
+}
+
+impl<T> From<&Vec<T>> for Buffer<T> {
+    fn from(value: &Vec<T>) -> Self {
+        let buf = Buffer {
+            ptr: unsafe { heap::alloc::<T>(value.len()) },
+        };
+
+        unsafe { heap::copy::<T>(value.as_ptr(), buf.ptr.as_ptr(), value.len()) };
+
+        buf
     }
 }
 
@@ -97,7 +112,7 @@ pub trait BufferReader<T> {
             return None;
         }
 
-        unsafe { Some(heap::at(self.buf().ptr, index)) }
+        unsafe { Some(heap::at::<T>(self.buf().ptr.as_ptr(), index)) }
     }
 }
 
@@ -106,6 +121,18 @@ pub trait BufferWriter<T>: BufferReader<T> {
     fn set_cap(&mut self, size: usize);
     fn set_len(&mut self, size: usize);
     fn mut_buf(&mut self) -> &mut Buffer<T>;
+
+    fn extract(&mut self) -> Buffer<T> {
+        let buf = Buffer {
+            ptr: self.buf().ptr,
+        };
+
+        self.mut_buf().ptr = ptr::NonNull::<T>::dangling();
+        self.set_cap(0);
+        self.set_len(0);
+
+        buf
+    }
 
     fn resize(&mut self, to: usize) {
         assert!(to != 0, "Resizing to 0 is not allowed");
@@ -120,12 +147,12 @@ pub trait BufferWriter<T>: BufferReader<T> {
 
         self.mut_buf().ptr = unsafe {
             if cap == 0 {
-                heap::alloc(to)
+                heap::alloc::<T>(to)
             } else {
                 if to < len {
-                    heap::drop(ptr, to - 1, len - 1);
+                    heap::drop::<T>(ptr.as_ptr(), to - 1, len - 1);
                 }
-                heap::realloc(ptr, cap, to)
+                heap::realloc::<T>(ptr.as_ptr(), cap, to)
             }
         };
 
@@ -138,60 +165,31 @@ pub trait BufferWriter<T>: BufferReader<T> {
 
     fn append(&mut self, elem: T) {
         let index = self.len();
-        assert!(index < self.cap(), "writing buffer out of bound");
+        let length = self.len() + 1;
 
-        unsafe { heap::insert(self.buf().ptr, index, elem) };
-        self.set_len(index + 1)
+        if length > self.cap() {
+            self.resize(length);
+        }
+
+        unsafe { heap::insert::<T>(self.buf().ptr.as_ptr(), index, elem) };
+        self.set_len(length)
+    }
+
+    fn concat(&mut self, source: &dyn BufferReader<T>) {
+        let old_length = self.len();
+        let new_length = self.len() + source.len();
+
+        if new_length > self.cap() {
+            self.resize(new_length);
+        }
+
+        unsafe {
+            heap::copy::<T>(
+                source.buf().ptr.as_ptr(),
+                self.buf().ptr.as_ptr().add(old_length),
+                source.len(),
+            )
+        };
+        self.set_len(new_length)
     }
 }
-
-// ------------------------------------------
-// example
-// ------------------------------------------
-
-// pub struct SmallVec<T> {
-//     buf: Buffer<T>,
-//     len: u16,
-//     cap: u16,
-// }
-
-// impl<T> SmallVec<T> {
-//     pub fn new() -> SmallVec<T> {
-//         SmallVec {
-//             buf: unsafe { Buffer::new(0) },
-//             len: 0,
-//             cap: 0,
-//         }
-//     }
-// }
-
-// impl<T> Drop for SmallVec<T> {
-//     fn drop(&mut self) {
-//         unsafe { self.buf.drop(self.cap()) };
-//     }
-// }
-
-// impl<T> BufferReader<T> for SmallVec<T> {
-//     fn buf(&self) -> &Buffer<T> {
-//         &self.buf
-//     }
-//     fn len(&self) -> usize {
-//         self.len.into()
-//     }
-// }
-
-// impl<T> BufferWriter<T> for SmallVec<T> {
-//     fn cap(&self) -> usize {
-//         self.cap.into()
-//     }
-//     fn set_cap(&mut self, size: usize) {
-//         assert!(size < u16::MAX.into(), "Allocation too large");
-//         self.cap = size.try_into().unwrap();
-//     }
-//     fn mut_buf(&mut self) -> &mut Buffer<T> {
-//         &mut self.buf
-//     }
-//     fn set_len(&mut self, size: usize) {
-//         self.len = size.try_into().unwrap();
-//     }
-// }
