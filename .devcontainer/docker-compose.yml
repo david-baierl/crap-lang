@@ -16,7 +16,7 @@ services:
       # - $HOME:/.home:cached
 
       # ssh & gnupg
-      # - $HOME/.ssh:/home/rust/.ssh
+      - $HOME/.ssh:/home/rust/.ssh
       # - $HOME/.gnupg:/home/rust/.gnupg
 
       # project mounting
