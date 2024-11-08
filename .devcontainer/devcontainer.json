@@ -21,7 +21,8 @@
 			"extensions": [
 				"rust-lang.rust-analyzer",
 				"dustypomerleau.rust-syntax",
-				"yzhang.markdown-all-in-one"
+				"yzhang.markdown-all-in-one",
+				"tamasfe.even-better-toml"
 			]
 		}
 	}
