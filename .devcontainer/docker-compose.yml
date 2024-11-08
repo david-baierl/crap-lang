@@ -12,20 +12,14 @@ services:
     user: "${UID:-1000}:${GID:-1000}"
 
     volumes:
-      # home fallback
-      # - $HOME:/.home:cached
-
-      # ssh & gnupg
       - $HOME/.ssh:/home/rust/.ssh
-      # - $HOME/.gnupg:/home/rust/.gnupg
+      - $HOME/.config:/home/rust/.config:cached
+      - $HOME/.profile:/home/rust/.profile:cached
+      - local:/home/rust/.local
+      - cache:/home/rust/.cache
 
       # project mounting
       - ..:/home/rust/crap-lang
-
-      # zsh
-      # - .zshrc:/home/rust/.zshrc
-      # - local:/home/rust/.local
-      # - cache:/home/rust/.cache
 
     environment:
       - TZ="Europe/Berlin"
