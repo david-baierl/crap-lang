@@ -30,7 +30,7 @@ pub enum ExpressionKind {
 
 pub struct ExpressionNode {
     pub index: u32,
-    // pub size: u16,
+    pub size: u16,
     pub token: Token,
     pub kind: ExpressionKind,
 }
@@ -43,7 +43,7 @@ impl ExpressionNode {
 
         ExpressionNode {
             index,
-            // size: size.try_into().unwrap(),
+            size: size.try_into().unwrap(),
             token,
             kind,
         }
@@ -52,7 +52,7 @@ impl ExpressionNode {
 
 impl fmt::Debug for ExpressionNode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?} {:?} i:{}", self.kind, self.token, self.index)
+        write!(f, "{:?} {:?} i:{} s:{}", self.kind, self.token, self.index, self.size)
     }
 }
 
