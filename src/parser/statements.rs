@@ -1,6 +1,6 @@
 use crate::{
-    ast::statements::{Statement, StatementFlag},
-    lexer::tokens::Token, utils::bit_array::{BitArray, Byte},
+    ast::{expressions::ExpressionNode, statements::{Statement, StatementFlag}},
+    lexer::tokens::Token, utils::{array_page_buffer::ArrayPageBuffer, bit_array::{BitArray, Byte}},
 };
 
 use super::{expressions::parse_expr, precedence::Precedence, Parser};
@@ -30,22 +30,26 @@ fn parse_variable_stmt(parser: &mut Parser) -> Statement {
         _ => panic!("bad token: {:?}", node),
     };
 
-    let symbol = parse_expr(parser, Precedence::Default);
+    let mut expr = ArrayPageBuffer::<ExpressionNode>::new();
+    parse_expr(parser, &mut expr, Precedence::Default);
 
     parser.eat(Token::Equal);
 
-    let mut value = parse_expr(parser, Precedence::Default);
+    let mut value = ArrayPageBuffer::<ExpressionNode>::new();
+    parse_expr(parser, &mut value, Precedence::Default);
 
     // [Value][Symbol]
-    value.extend(symbol);
+    expr.prepend(&mut value);
 
     Statement::Variable {
-        expr: value.into(),
+        expr,
         flags,
     }
 }
 
 fn parse_expr_stmt(parser: &mut Parser) -> Statement {
-    let expr = parse_expr(parser, Precedence::Default);
-    Statement::Expression { expr: expr.into() }
+    let mut expr = ArrayPageBuffer::<ExpressionNode>::new();
+    parse_expr(parser, &mut expr, Precedence::Default);
+
+    Statement::Expression { expr }
 }

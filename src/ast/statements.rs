@@ -1,6 +1,6 @@
-use crate::utils::bit_array::{Bit, BitArray, Byte, BIT_1};
+use crate::utils::{array_page_buffer::ArrayPageBuffer, bit_array::{Bit, BitArray, Byte, BIT_1}};
 
-use super::expressions::{debug_expr, Expression};
+use super::expressions::{debug_expr, Expression, ExpressionNode};
 
 pub enum StatementFlag {
     IsConst,
@@ -25,7 +25,7 @@ pub enum Statement {
     // },
 
     Expression {
-        expr: Expression, // [E]
+        expr: ArrayPageBuffer<ExpressionNode>, // [E]
     },
 
     Variable {

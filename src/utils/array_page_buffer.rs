@@ -1,4 +1,5 @@
-use std::{alloc, mem, ptr};
+use std::{alloc, mem, ptr, cmp};
+
 extern crate page_size;
 
 pub struct ArrayPageBuffer<T: Sized> {
@@ -18,8 +19,12 @@ impl<T> ArrayPageBuffer<T> {
         }
     }
 
+    // -----------------------------------------------------------------------
+    // core
+    // -----------------------------------------------------------------------
+
     fn page_limit() -> usize {
-        page_size::get() / mem::size_of::<T>()
+        cmp::min(page_size::get(), 1024) / mem::size_of::<T>()
     }
 
     unsafe fn alloc() -> ptr::NonNull<T> {
@@ -46,13 +51,21 @@ impl<T> ArrayPageBuffer<T> {
         buffer[offset / page_size].as_ptr().add(offset % page_size)
     }
 
-    pub fn at(&self, index: usize) -> Option<&T> {
+    pub fn at(&self, index: isize) -> Option<&T> {
+        if index < self.start || index >= self.end {
+            return None;
+        }
+
+        unsafe { Some(&*self.ptr(index)) }
+    }
+
+    pub fn get(&self, index: usize) -> Option<&T> {
         if index > self.len() {
             return None;
         }
 
         let index = (index as i128 + self.start as i128) as isize;
-        unsafe { Some(&*self.ptr(index)) }
+        self.at(index)
     }
 
     pub fn len(&self) -> usize {
@@ -99,12 +112,19 @@ impl<T> ArrayPageBuffer<T> {
 
         // --- write --- //
 
-        unsafe { ptr::write(self.ptr(self.start), item) };
         self.start -= 1;
+        unsafe { ptr::write(self.ptr(self.start), item) };
     }
-}
 
-impl<T: Copy> ArrayPageBuffer<T> {
+    pub fn prepend(&mut self, source: &mut Self) {
+        loop {
+            match source.pop() {
+                Some(elem) => self.unshift(elem),
+                None => return
+            }
+        }
+    }
+
     /// removes the last element and returns it
     pub fn pop(&mut self) -> Option<T> {
         if self.len() == 0 {
@@ -115,14 +135,34 @@ impl<T: Copy> ArrayPageBuffer<T> {
         unsafe { Some(ptr::read(self.ptr(self.end))) }
     }
 
-    /// removes the first element and returns it
-    pub fn shift(&mut self) -> Option<T> {
-        if self.len() == 0 {
-            return None;
-        }
+    // /// removes the first element and returns it
+    // pub fn shift(&mut self) -> Option<T> {
+    //     if self.len() == 0 {
+    //         return None;
+    //     }
 
-        self.start += 1;
-        unsafe { Some(ptr::read(self.ptr(self.start))) }
+    //     self.start += 1;
+    //     unsafe { Some(ptr::read(self.ptr(self.start))) }
+    // }
+
+    // -----------------------------------------------------------------------
+    // helper
+    // -----------------------------------------------------------------------
+
+    // pub fn last(&self) -> Option<&T> {
+    //     self.at(self.end - 1)
+    // }
+
+    // pub fn first(&self) -> Option<&T> {
+    //     self.at(self.start + 1)
+    // }
+
+    pub fn iter<'a>(&'a self) -> ArrayPageIterator<'a, T> {
+        ArrayPageIterator {
+            buffer: self,
+            start: self.start,
+            end: self.end,
+        }
     }
 }
 
@@ -141,14 +181,24 @@ impl<T> Drop for ArrayPageBuffer<T> {
     }
 }
 
-// impl<T> From<&Vec<T>> for ArrayPageBuffer<T> {
-//     fn from(value: &Vec<T>) -> Self {
-//         todo!();
-//     }
-// }
+pub struct ArrayPageIterator<'a, T> {
+    buffer: &'a ArrayPageBuffer<T>,
+    start: isize,
+    end: isize,
+}
 
-// impl<T> From<Vec<T>> for ArrayPageBuffer<T> {
-//     fn from(value: Vec<T>) -> Self {
-//         todo!();
-//     }
-// }
+impl<'a, T> Iterator for ArrayPageIterator<'a, T> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.start += 1;
+        self.buffer.at(self.start)
+    }
+}
+
+impl<'a, T> DoubleEndedIterator for ArrayPageIterator<'a, T> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.end -= 1;
+        self.buffer.at(self.end)
+    }
+}

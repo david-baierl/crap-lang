@@ -1,6 +1,6 @@
 use core::fmt;
 
-use crate::lexer::tokens::Token;
+use crate::{lexer::tokens::Token, utils::array_page_buffer::ArrayPageBuffer};
 
 #[derive(Debug)]
 pub enum ExpressionKind {
@@ -16,7 +16,7 @@ pub enum ExpressionKind {
 
     // --- unary --- //
     Prefix, // [E][T] -> [E][T]
-    Sufix,  // [T][E] -> [E][T]
+    // Sufix,  // [T][E] -> [E][T]
     Block,  // [T][E][T] -> [E][T]
 
     // --- binary --- //
@@ -30,7 +30,7 @@ pub enum ExpressionKind {
 
 pub struct ExpressionNode {
     pub index: u32,
-    pub size: u16,
+    // pub size: u16,
     pub token: Token,
     pub kind: ExpressionKind,
 }
@@ -43,7 +43,7 @@ impl ExpressionNode {
 
         ExpressionNode {
             index,
-            size: size.try_into().unwrap(),
+            // size: size.try_into().unwrap(),
             token,
             kind,
         }
@@ -57,8 +57,7 @@ impl fmt::Debug for ExpressionNode {
 }
 
 // drop capacity field
-pub type Expression = Box<[ExpressionNode]>;
-pub type MutExpression = Vec<ExpressionNode>;
+pub type Expression = ArrayPageBuffer<ExpressionNode>;
 
 pub fn debug_expr(expr: &Expression, deph: &mut Vec<isize>) {
     use ExpressionKind::*;

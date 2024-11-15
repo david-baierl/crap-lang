@@ -2,7 +2,7 @@ use statements::parse_stmt;
 
 use crate::{
     ast::statements::Statement,
-    lexer::tokens::{Token, TokenNode},
+    lexer::tokens::{Token, TokenNode}, utils::array_page_buffer::ArrayPageBuffer,
 };
 
 mod expressions;
@@ -11,7 +11,7 @@ mod statements;
 
 struct Parser {
     index: usize,
-    stmts: Vec<Statement>,
+    stmts: ArrayPageBuffer<Statement>,
     tokens: Vec<TokenNode>,
 }
 
@@ -19,7 +19,7 @@ impl Parser {
     fn new(tokens: Vec<TokenNode>) -> Parser {
         Parser {
             index: 0,
-            stmts: vec![],
+            stmts: ArrayPageBuffer::new(),
             tokens,
         }
     }
@@ -73,7 +73,7 @@ impl Parser {
     }
 }
 
-pub fn parse(tokens: Vec<TokenNode>) -> Vec<Statement> {
+pub fn parse(tokens: Vec<TokenNode>) -> ArrayPageBuffer<Statement> {
     let mut parser = Parser::new(tokens);
 
     while parser.has_tokens_left() {

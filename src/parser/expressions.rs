@@ -1,8 +1,6 @@
-use std::mem;
-
 use crate::{
-    ast::expressions::{ExpressionKind, ExpressionNode, MutExpression},
-    lexer::tokens::{Token, TokenNode},
+    ast::expressions::{ExpressionKind, ExpressionNode, Expression},
+    lexer::tokens::{Token, TokenNode}, utils::array_page_buffer::ArrayPageBuffer,
 };
 
 use super::{
@@ -10,10 +8,10 @@ use super::{
     Parser,
 };
 
-pub fn parse_expr(parser: &mut Parser, prev_power: Precedence) -> MutExpression {
+pub fn parse_expr(parser: &mut Parser, expr: &mut Expression, prev_power: Precedence) {
     use Token::*;
 
-    let mut expr: MutExpression = vec![];
+    // let mut expr: MutExpression = ArrayPageBuffer::<ExpressionNode>::new();
 
     // --- nud --- //
 
@@ -22,9 +20,9 @@ pub fn parse_expr(parser: &mut Parser, prev_power: Precedence) -> MutExpression 
 
     // nud handler
     match node.token {
-        Number | Identifier => parse_literal_expr(parser, &mut expr),
-        Plus | Minus => parse_prefix_expr(parser, &mut expr, nud_power),
-        OpenParen => parse_block_expr(parser, &mut expr),
+        Number | Identifier => parse_literal_expr(parser, expr),
+        Plus | Minus => parse_prefix_expr(parser, expr, nud_power),
+        OpenParen => parse_block_expr(parser, expr),
 
         _ => panic!("nud handler: bad token: {:?}", node),
     };
@@ -45,48 +43,44 @@ pub fn parse_expr(parser: &mut Parser, prev_power: Precedence) -> MutExpression 
 
         // led handler
         match node.token {
-            Plus | Minus => parse_binary_expr(parser, &mut expr, next_power),
-            Star | Slash | Percent => parse_binary_expr(parser, &mut expr, next_power),
-            Question => parse_ternary_expr(parser, &mut expr, next_power),
+            Plus | Minus => parse_binary_expr(parser, expr, next_power),
+            Star | Slash | Percent => parse_binary_expr(parser, expr, next_power),
+            Question => parse_ternary_expr(parser, expr, next_power),
 
             _ => panic!("led handler: bad token: {:?}", node),
         }
     }
-
-    expr
 }
 
-fn parse_literal_expr(parser: &mut Parser, expr: &mut MutExpression) {
+fn parse_literal_expr(parser: &mut Parser, expr: &mut Expression) {
     let TokenNode { index, token } = parser.next();
     let literal = ExpressionNode::new(index, 1, token, ExpressionKind::Literal);
 
     expr.push(literal);
 }
 
-fn parse_prefix_expr(parser: &mut Parser, expr: &mut MutExpression, power: Precedence) {
+fn parse_prefix_expr(parser: &mut Parser, expr: &mut Expression, power: Precedence) {
     let TokenNode { index, token } = parser.next();
-    let rhs = parse_expr(parser, power);
-    expr.extend(rhs);
+    parse_expr(parser, expr, power);
 
     let operator = ExpressionNode::new(index, expr.len() + 1, token, ExpressionKind::Prefix);
     expr.push(operator);
 }
 
-fn parse_binary_expr(parser: &mut Parser, expr: &mut MutExpression, power: Precedence) {
+fn parse_binary_expr(parser: &mut Parser, expr: &mut Expression, power: Precedence) {
     let TokenNode { index, token } = parser.next();
-    let rhs = parse_expr(parser, power);
-
-    expr.extend(rhs);
+    parse_expr(parser, expr, power);
 
     let operator = ExpressionNode::new(index, expr.len() + 1, token, ExpressionKind::Binary);
     expr.push(operator);
 }
 
-fn parse_ternary_expr(parser: &mut Parser, expr: &mut MutExpression, power: Precedence) {
+fn parse_ternary_expr(parser: &mut Parser, expr: &mut Expression, power: Precedence) {
     let TokenNode { index, token } = parser.next();
+    let mut tmp = ArrayPageBuffer::<ExpressionNode>::new();
 
-    // [M]
-    let mhs = parse_expr(parser, power.clone());
+    parse_expr(parser, &mut tmp, power.clone());
+    expr.prepend(&mut tmp);
 
     // eat middle token
     match token {
@@ -95,17 +89,8 @@ fn parse_ternary_expr(parser: &mut Parser, expr: &mut MutExpression, power: Prec
         t => panic!("bad token: {:?}", t),
     };
 
-    // [R]
-    let mut rhs = parse_expr(parser, power.clone());
-
-    // [R]+[M]
-    rhs.extend(mhs);
-
-    // rhs: [L], expr: [R][M]
-    mem::swap(expr, &mut rhs);
-
-    // [R][M]+[L]
-    expr.extend(rhs);
+    parse_expr(parser, &mut tmp, power.clone());
+    expr.prepend(&mut tmp);
 
     let operator = ExpressionNode::new(index, expr.len() + 1, token, ExpressionKind::Ternary);
 
@@ -113,17 +98,15 @@ fn parse_ternary_expr(parser: &mut Parser, expr: &mut MutExpression, power: Prec
     expr.push(operator);
 }
 
-fn parse_block_expr(parser: &mut Parser, expr: &mut MutExpression) {
+fn parse_block_expr(parser: &mut Parser, expr: &mut Expression) {
     let TokenNode { index, token } = parser.next();
-    let rhs = parse_expr(parser, Precedence::Default);
+    parse_expr(parser, expr, Precedence::Default);
 
     match token {
         Token::OpenParen => parser.eat(Token::CloseParen),
 
         t => panic!("bad token: {:?}", t),
     };
-
-    expr.extend(rhs);
 
     let operator = ExpressionNode::new(index, expr.len() + 1, token, ExpressionKind::Block);
 
