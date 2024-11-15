@@ -1,12 +1,14 @@
 use pattern::Pattern;
 use tokens::{Token, TokenNode};
 
+use crate::utils::array_page_buffer::ArrayPageBuffer;
+
 pub mod tokens;
 mod pattern;
 mod handlers;
 
 struct Lexer {
-    tokens: Vec<tokens::TokenNode>,
+    tokens: Vec<TokenNode>,
     index: usize,
 }
 
@@ -31,9 +33,12 @@ impl Lexer {
     }
 }
 
-pub fn tokenize<'a>(buffer: &'a str) -> Vec<tokens::TokenNode> {
+pub fn tokenize<'a>(buffer: &'a str) -> Vec<TokenNode> {
     let patterns = Pattern::new();
     let mut lexer = Lexer::new();
+
+    let array_buffer = ArrayPageBuffer::<TokenNode>::new();
+    array_buffer.at(0);
 
     while lexer.index < buffer.len() {
         let slice = &buffer[lexer.index..];
