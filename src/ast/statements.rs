@@ -1,4 +1,4 @@
-use crate::utils::{Bit, BitArray, Byte, BIT_1};
+use crate::utils::bit_array::{Bit, BitArray, Byte, BIT_1};
 
 use super::expressions::{debug_expr, Expression};
 
