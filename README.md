@@ -1,7 +1,7 @@
 # crap-lang
 a crappy language written in rust
 
-## in favor of (loki)[https://github.com/david-baierl/loki-builder] postponed indefinitely
+## in favor of [loki](https://github.com/david-baierl/loki-builder) postponed indefinitely
 
 This is a hobby project to lern how compiler are working and additionaly lerning rust on the way.
 
